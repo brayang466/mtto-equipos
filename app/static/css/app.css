@@ -160,14 +160,6 @@ body:not(.page--home) .site-nav__link:hover {
   color: #0ea5e9;
 }
 
-body:not(.page--home) .site-footer {
-  color: #64748b;
-}
-
-body:not(.page--home) .site-footer__url {
-  color: #94a3b8;
-}
-
 .site-header {
   position: sticky;
   top: 0;
@@ -251,37 +243,6 @@ body:not(.page--home) .site-footer__url {
   max-width: 1120px;
   margin: 0 auto;
   padding: 1.5rem 1.25rem 3rem;
-}
-
-.site-footer {
-  max-width: 1120px;
-  margin: 0 auto;
-  padding: 1rem 1.25rem 2.5rem;
-  color: var(--muted);
-  font-size: 0.875rem;
-}
-
-body:not(.page--home) .site-footer p:first-child {
-  color: #64748b;
-}
-
-.site-footer__url {
-  margin: 0.35rem 0 0;
-  font-size: 0.8rem;
-  word-break: break-all;
-}
-
-.site-footer__label {
-  display: inline-block;
-  margin-right: 0.35rem;
-  padding: 0.1rem 0.4rem;
-  border-radius: 6px;
-  background: rgba(148, 163, 184, 0.2);
-  font-weight: 700;
-  font-size: 0.68rem;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: #94a3b8;
 }
 
 .page--home .container {
@@ -404,10 +365,6 @@ body:not(.page--home) .site-footer p:first-child {
 
 .feature-card__icon--b {
   background: linear-gradient(135deg, #22c55e, #14b8a6);
-}
-
-.feature-card__icon--c {
-  background: linear-gradient(135deg, #f59e0b, #ec4899);
 }
 
 .feature-card__title {
