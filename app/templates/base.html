@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Mantenimiento preventivo{% endblock %} · {{ app_name }}</title>
+  {% if app_url %}
+  <link rel="canonical" href="{{ app_url }}{{ request.path }}">
+  {% endif %}
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
+</head>
+<body class="{% block body_class %}{% endblock %}">
+  <div class="page-bg" aria-hidden="true"></div>
+  <header class="site-header">
+    <div class="site-header__inner">
+      <a class="site-logo" href="{{ url_for('main.inicio') }}">
+        <span class="site-logo__mark"></span>
+        {{ app_name }}
+      </a>
+      <nav class="site-nav">
+        <a class="site-nav__link" href="{{ url_for('main.inicio') }}">Inicio</a>
+        <a class="site-nav__link site-nav__link--cta" href="{{ url_for('equipos.lista') }}">Inventario</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container container--enter">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <ul class="flash-list">
+          {% for category, message in messages %}
+            <li class="flash flash--{{ category }} anim-fade-in">{{ message }}</li>
+          {% endfor %}
+        </ul>
+      {% endif %}
+    {% endwith %}
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer class="site-footer">
+    <p>Control de mantenimiento preventivo — datos en MySQL</p>
+    {% if app_url %}
+      <p class="site-footer__url"><span class="site-footer__label">APP_URL</span> {{ app_url }}</p>
+    {% endif %}
+  </footer>
+</body>
+</html>

@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}Inicio{% endblock %}
+{% block body_class %}page--home{% endblock %}
+{% block content %}
+<section class="hero" aria-labelledby="hero-title">
+  <div class="hero__glow" aria-hidden="true"></div>
+  <div class="hero__inner anim-fade-in-up">
+    <p class="hero__eyebrow anim-fade-in" style="animation-delay: 0.05s">Inventario corporativo</p>
+    <h1 id="hero-title" class="hero__title">
+      <span class="hero__title-line">Mantenimiento preventivo</span>
+      <span class="hero__title-accent">equipos de cómputo</span>
+    </h1>
+    <p class="hero__text anim-fade-in" style="animation-delay: 0.15s">
+      Consulte el inventario activo, el detalle de cada equipo y registre el cumplimiento
+      del mantenimiento preventivo <strong>2026</strong> por semestre.
+    </p>
+    <div class="hero__actions anim-fade-in" style="animation-delay: 0.25s">
+      <a class="btn btn--primary btn--lg btn--pulse" href="{{ url_for('equipos.lista') }}">Ir al inventario</a>
+      <a class="btn btn--glass btn--lg" href="#funciones">Qué puede hacer aquí</a>
+    </div>
+  </div>
+</section>
+
+<section id="funciones" class="feature-grid anim-fade-in-up" style="animation-delay: 0.2s">
+  <article class="feature-card">
+    <div class="feature-card__icon feature-card__icon--a" aria-hidden="true">1</div>
+    <h2 class="feature-card__title">Inventario centralizado</h2>
+    <p class="feature-card__text">Listado con búsqueda por inventario, contable, departamento o usuario.</p>
+  </article>
+  <article class="feature-card">
+    <div class="feature-card__icon feature-card__icon--b" aria-hidden="true">2</div>
+    <h2 class="feature-card__title">Control 2026</h2>
+    <p class="feature-card__text">Marque 1.er y 2.do semestre desde la ficha de cada equipo.</p>
+  </article>
+  <article class="feature-card">
+    <div class="feature-card__icon feature-card__icon--c" aria-hidden="true">3</div>
+    <h2 class="feature-card__title">Datos en MySQL</h2>
+    <p class="feature-card__text">La información vive en su base <code>mtto_equipos</code>, lista para respaldos y reportes.</p>
+  </article>
+</section>
+{% endblock %}

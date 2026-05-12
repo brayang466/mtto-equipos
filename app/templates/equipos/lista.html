@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% block title %}Inventario{% endblock %}
+{% block content %}
+<p class="breadcrumb"><a href="{{ url_for('main.inicio') }}">Inicio</a> · <span class="breadcrumb__here">Inventario</span></p>
+<h1 class="page-title">Inventario de equipos</h1>
+<p class="page-lead">Consulte el inventario y abra cada equipo para registrar el mantenimiento preventivo 2026.</p>
+
+<form class="search-bar" method="get" action="{{ url_for('equipos.lista') }}">
+  <label for="q">Buscar</label>
+  <input type="search" id="q" name="q" value="{{ q }}" placeholder="Inventario, contable, departamento, usuario…" autocomplete="off">
+  <button type="submit">Buscar</button>
+  {% if q %}
+    <a class="btn btn--ghost" href="{{ url_for('equipos.lista') }}">Limpiar</a>
+  {% endif %}
+</form>
+
+{% if pagination.total == 0 %}
+  <p class="empty-state">No hay equipos que coincidan con la búsqueda.</p>
+{% else %}
+  <p class="meta">{{ pagination.total }} equipo(s) · página {{ pagination.page }} de {{ pagination.pages or 1 }}</p>
+
+  <div class="table-wrap">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>N.º inventario</th>
+          <th>N.º contable</th>
+          <th>Departamento</th>
+          <th>Usuario</th>
+          <th>Descripción</th>
+          <th>1.er sem. 2026</th>
+          <th>2.do sem. 2026</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for e in pagination.items %}
+        <tr>
+          <td><strong>{{ e.numero_inventario }}</strong></td>
+          <td>{{ e.numero_contable or "—" }}</td>
+          <td>{{ e.departamento or "—" }}</td>
+          <td>{{ e.usuario or "—" }}</td>
+          <td class="cell-muted">{{ e.descripcion or "—" }}</td>
+          <td>{% if e.mtto_realizado_1s_2026 %}<span class="badge badge--ok">Sí</span>{% else %}<span class="badge">No</span>{% endif %}</td>
+          <td>{% if e.mtto_realizado_2s_2026 %}<span class="badge badge--ok">Sí</span>{% else %}<span class="badge">No</span>{% endif %}</td>
+          <td><a class="link" href="{{ url_for('equipos.detalle', equipo_id=e.id) }}">Detalle</a></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  {% if pagination.pages > 1 %}
+  <nav class="pagination" aria-label="Paginación">
+    {% if pagination.has_prev %}
+      <a href="{{ url_for('equipos.lista', page=pagination.prev_num, q=q) }}">← Anterior</a>
+    {% endif %}
+    {% if pagination.has_next %}
+      <a href="{{ url_for('equipos.lista', page=pagination.next_num, q=q) }}">Siguiente →</a>
+    {% endif %}
+  </nav>
+  {% endif %}
+{% endif %}
+{% endblock %}

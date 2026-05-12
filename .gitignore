@@ -1,0 +1,14 @@
+.env
+.env.local
+.venv/
+venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.idea/
+instance/
+*.log
+.coverage
+htmlcov/
+.DS_Store
+Thumbs.db

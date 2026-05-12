@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block title %}Equipo {{ equipo.numero_inventario }}{% endblock %}
+{% block content %}
+<p class="breadcrumb">
+  <a href="{{ url_for('main.inicio') }}">Inicio</a>
+  · <a href="{{ url_for('equipos.lista') }}">Inventario</a>
+  · <span class="breadcrumb__here">Equipo {{ equipo.numero_inventario }}</span>
+</p>
+
+<h1 class="page-title">Equipo {{ equipo.numero_inventario }}</h1>
+
+<section class="panel">
+  <h2 class="panel__title">Datos del inventario</h2>
+  <dl class="detail-grid">
+    <dt>N.º contable</dt><dd>{{ equipo.numero_contable or "—" }}</dd>
+    <dt>Código contable</dt><dd>{{ equipo.codigo_contable or "—" }}</dd>
+    <dt>Departamento</dt><dd>{{ equipo.departamento or "—" }}</dd>
+    <dt>Área</dt><dd>{{ equipo.area or "—" }}</dd>
+    <dt>Usuario</dt><dd>{{ equipo.usuario or "—" }}</dd>
+    <dt>Cargo</dt><dd>{{ equipo.cargo or "—" }}</dd>
+    <dt>Descripción</dt><dd>{{ equipo.descripcion or "—" }}</dd>
+    <dt>Marca y referencia</dt><dd>{{ equipo.marca_referencia or "—" }}</dd>
+    <dt>Service tag / product name</dt><dd>{{ equipo.service_tag or "—" }}</dd>
+    <dt>Serial CPU</dt><dd>{{ equipo.serial_cpu or "—" }}</dd>
+    <dt>Fecha adquisición</dt><dd>{{ equipo.fecha_adquisicion.strftime("%d/%m/%Y") if equipo.fecha_adquisicion else "—" }}</dd>
+    <dt>Observaciones</dt><dd class="detail-grid__wide">{{ equipo.observaciones or "—" }}</dd>
+  </dl>
+</section>
+
+<section class="panel panel--accent">
+  <h2 class="panel__title">Mantenimiento preventivo 2026</h2>
+  <form method="post" class="mtto-form" novalidate>
+    {{ form.hidden_tag() }}
+    <div class="checkbox-row">
+      {{ form.mtto_realizado_1s_2026(class_="checkbox") }}
+      {{ form.mtto_realizado_1s_2026.label(class_="checkbox-label") }}
+    </div>
+    <div class="checkbox-row">
+      {{ form.mtto_realizado_2s_2026(class_="checkbox") }}
+      {{ form.mtto_realizado_2s_2026.label(class_="checkbox-label") }}
+    </div>
+    <div class="form-actions">
+      {{ form.guardar(class_="btn btn--primary") }}
+    </div>
+  </form>
+</section>
+{% endblock %}
