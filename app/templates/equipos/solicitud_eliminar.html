@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% from "macros/nav.html" import back_link %}
+{% block title %}Eliminar solicitud #{{ sol.id }}{% endblock %}
+{% block body_class %}page--app{% endblock %}
+{% block content %}
+<div class="app-shell anim-fade-in-up">
+  <header class="page-head">
+    {{ back_link(back_url, "Volver a solicitudes") }}
+    <h1 class="page-title page-title--app">Eliminar solicitud #{{ sol.id }}</h1>
+    <p class="page-lead page-lead--app">
+      Esta acción elimina la solicitud del inventario <strong>{{ sol.equipo.numero_inventario }}</strong>
+      y las {{ sol.adjuntos.count() }} evidencia(s) adjunta(s). No se puede deshacer.
+    </p>
+  </header>
+
+  <form class="form-card form-card--app form-card--danger" method="post" novalidate>
+    {{ form.hidden_tag() }}
+    <div class="field field--checkbox">
+      {{ form.confirmar() }}
+      {{ form.confirmar.label(class="field__label field__label--inline") }}
+      {% for e in form.confirmar.errors %}<p class="field__error">{{ e }}</p>{% endfor %}
+    </div>
+    <div class="form-actions">
+      {{ form.eliminar(class="btn btn--danger") }}
+      <a class="btn btn--ghost btn--ghost-app" href="{{ back_url }}">Cancelar</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

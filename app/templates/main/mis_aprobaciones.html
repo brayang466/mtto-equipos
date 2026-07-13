@@ -1,0 +1,119 @@
+{% extends "base.html" %}
+{% block title %}Mis aprobaciones{% endblock %}
+{% block body_class %}page--app{% endblock %}
+{% block content %}
+<div class="app-shell anim-fade-in-up">
+  <header class="page-head">
+    <p class="breadcrumb breadcrumb--on-light">
+      <a href="{{ url_for('main.inicio') }}">Inicio</a>
+      · <span class="breadcrumb__here">Aprobaciones de mantenimiento</span>
+    </p>
+    <h1 class="page-title page-title--app">Solicitudes por aprobar</h1>
+    <p class="page-lead page-lead--app">
+      TIC solicitó mantenimiento en equipos de su área. Apruebe indicando la fecha disponible o deniegue si no es posible.
+    </p>
+  </header>
+
+  {% if not pendientes %}
+    <p class="empty-state empty-state--app">No tiene solicitudes pendientes de su respuesta.</p>
+  {% else %}
+    <div class="aprob-list">
+      {% for s in pendientes %}
+        {% set eq = s.equipo %}
+        <a
+          class="aprob-card {% if solicitud and solicitud.id == s.id %}aprob-card--active{% endif %} anim-fade-in-up"
+          href="{{ url_for('main.mis_aprobaciones', id=s.id) }}"
+          style="animation-delay: {{ loop.index0 * 0.05 }}s"
+        >
+          <span class="aprob-card__inv">{{ eq.numero_inventario if eq else "?" }}</span>
+          <span class="aprob-card__body">
+            <strong>{{ (eq.descripcion if eq else "Equipo")|e }}</strong>
+            <span class="aprob-card__meta">Propuesta TIC: {{ s.fecha_mantenimiento.strftime("%d/%m/%Y") if s.fecha_mantenimiento else "sin fecha" }}</span>
+          </span>
+          <span class="badge badge--warn">Pendiente</span>
+        </a>
+      {% endfor %}
+    </div>
+
+    {% if solicitud and equipo_resumen %}
+    <section class="panel panel--app panel--accent-app anim-fade-in-up">
+      <h2 class="panel__title panel__title--accent">Responder — inventario {{ equipo_resumen.numero_inventario }}</h2>
+
+      <div class="aprob-equipo">
+        <h3 class="aprob-equipo__title">Datos del equipo</h3>
+        <dl class="detail-grid detail-grid--compact aprob-equipo__grid">
+          <dt>N.º inventario</dt><dd><strong>{{ equipo_resumen.numero_inventario or "—" }}</strong></dd>
+          <dt>N.º contable</dt><dd>{{ equipo_resumen.numero_contable or "—" }}</dd>
+          <dt>Código contable</dt><dd>{{ equipo_resumen.codigo_contable or "—" }}</dd>
+          <dt>Departamento</dt><dd>{{ equipo_resumen.departamento or "—" }}</dd>
+          <dt>Área</dt><dd>{{ equipo_resumen.area or "—" }}</dd>
+          <dt>Usuario asignado</dt><dd>{{ equipo_resumen.usuario or "—" }}</dd>
+          <dt>Cargo</dt><dd>{{ equipo_resumen.cargo or "—" }}</dd>
+          <dt>Descripción</dt><dd>{{ equipo_resumen.descripcion or "—" }}</dd>
+          <dt>Marca / referencia</dt><dd>{{ equipo_resumen.marca_referencia or "—" }}</dd>
+          <dt>Service tag</dt><dd>{{ equipo_resumen.service_tag or "—" }}</dd>
+          <dt>Serial CPU</dt><dd>{{ equipo_resumen.serial_cpu or "—" }}</dd>
+          <dt>Fecha adquisición</dt><dd>{{ equipo_resumen.fecha_adquisicion or "—" }}</dd>
+        </dl>
+      </div>
+
+      <dl class="detail-grid detail-grid--compact aprob-solicitud">
+        <dt>Fecha solicitud TIC</dt>
+        <dd>{{ solicitud.fecha_solicitud.strftime("%d/%m/%Y") if solicitud.fecha_solicitud else "—" }}</dd>
+        <dt>Fecha propuesta TIC</dt>
+        <dd>{{ solicitud.fecha_mantenimiento.strftime("%d/%m/%Y") if solicitud.fecha_mantenimiento else "—" }}</dd>
+        <dt>Mensaje TIC</dt>
+        <dd class="detail-grid__wide">{{ solicitud.observaciones or "—" }}</dd>
+      </dl>
+
+      <form
+        method="post"
+        class="solicitud-form"
+        id="form-aprobacion"
+        data-solicitud-id="{{ solicitud.id }}"
+        novalidate
+      >
+        {{ form.hidden_tag() }}
+        <input type="hidden" name="solicitud_id" value="{{ solicitud.id }}">
+
+        <div class="aprob-draft-bar">
+          <p class="aprob-draft-bar__hint">Su respuesta se guarda automáticamente en este equipo mientras trabaja.</p>
+          <button type="button" class="btn btn--ghost btn--ghost-app btn--sm" id="btn-guardar-borrador">Guardar borrador</button>
+          <span class="aprob-draft-bar__status" id="aprob-draft-status" aria-live="polite"></span>
+        </div>
+
+        <div class="field">
+          {{ form.decision.label(class_="field__label") }}
+          <div class="radio-row-group">
+            {% for sub in form.decision %}
+              <label class="radio-pill">{{ sub() }} <span>{{ sub.label.text }}</span></label>
+            {% endfor %}
+          </div>
+          {% for e in form.decision.errors %}<p class="field__error">{{ e }}</p>{% endfor %}
+        </div>
+        <div class="field">
+          {{ form.fecha_mantenimiento.label(class_="field__label") }}
+          {{ form.fecha_mantenimiento(class_="field__input", type="date", id="fecha_mantenimiento") }}
+          <p class="field__hint">Obligatoria si aprueba. Si deniega, indique la fecha hasta la cual la solicitud permanece abierta para TIC.</p>
+          {% for e in form.fecha_mantenimiento.errors %}<p class="field__error">{{ e }}</p>{% endfor %}
+        </div>
+        <div class="field field--block">
+          {{ form.comentario.label(class_="field__label") }}
+          {{ form.comentario(class_="field__input field__input--area", id="comentario") }}
+          {% for e in form.comentario.errors %}<p class="field__error">{{ e }}</p>{% endfor %}
+        </div>
+        <div class="form-actions">
+          {{ form.enviar(class_="btn btn--primary") }}
+        </div>
+      </form>
+    </section>
+    {% endif %}
+  {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+{% if solicitud %}
+<script src="{{ url_for('static', filename='js/aprobacion-draft.js') }}" defer></script>
+{% endif %}
+{% endblock %}

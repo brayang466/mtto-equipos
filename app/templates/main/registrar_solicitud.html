@@ -1,0 +1,380 @@
+{% extends "base.html" %}
+{% macro equipo_kind(eq) -%}
+  {%- set d = (eq.descripcion or '')|upper -%}
+  {%- if 'SERVIDOR' in d -%}server{%- elif 'PORTATIL' in d or 'PORTÁTIL' in d or 'LAPTOP' in d -%}laptop{%- else -%}pc{%- endif -%}
+{%- endmacro %}
+{% block title %}Registrar solicitud de mantenimiento{% endblock %}
+{% block body_class %}page--app{% endblock %}
+{% block content %}
+<div class="app-shell anim-fade-in-up">
+  <header class="page-head">
+    <p class="breadcrumb breadcrumb--on-light">
+      <a href="{{ url_for('main.inicio') }}">Inicio</a>
+      · <span class="breadcrumb__here">Solicitud de mantenimiento</span>
+    </p>
+    <h1 class="page-title page-title--app">Registrar solicitud</h1>
+    <p class="page-lead page-lead--app">
+      Seleccione <strong>su equipo</strong> entre los del inventario asociados a su área (<strong>{{ current_user.area }}</strong>),
+      indique las fechas y, si lo desea, adjunte fotos como evidencia.
+    </p>
+  </header>
+  <section class="panel panel--app panel--accent-app">
+    {% if equipos_en_area == 0 %}
+      <p class="empty-state--app empty-state--inline">
+        No hay equipos en inventario cuyo campo <strong>área</strong> coincida con <strong>{{ current_user.area }}</strong>.
+        Si cree que es un error de datos, contacte a <strong>TIC</strong>.
+      </p>
+    {% endif %}
+    <form method="post" class="solicitud-form" enctype="multipart/form-data" novalidate>
+      {{ form.hidden_tag() }}
+      <div class="field field--block">
+        <label class="field__label" for="{{ form.numero_inventario.id }}" id="{{ form.numero_inventario.id }}-lbl">
+          {{ form.numero_inventario.label.text }}
+        </label>
+        <p class="field__hint">
+          {% if equipos_en_area > 0 %}
+            {{ equipos_en_area }} equipo{% if equipos_en_area != 1 %}s{% endif %} de su área.
+            Pulse una tarjeta para seleccionarlo o use <strong>Ver ficha</strong> para revisar los datos antes de enviar.
+          {% else %}
+            No hay equipos disponibles para su área.
+          {% endif %}
+        </p>
+        <div
+          class="equipo-picker equipo-picker--cards"
+          data-equipo-cards
+          role="group"
+          aria-labelledby="{{ form.numero_inventario.id }}-lbl"
+        >
+          {% if equipos_en_area > 0 %}
+          <div class="equipo-picker__grid" id="equipo-cards-list">
+            {% for eq in equipos_area %}
+              {% set kind = equipo_kind(eq) %}
+              <div
+                class="equipo-card"
+                data-inv="{{ eq.numero_inventario }}"
+                role="button"
+                tabindex="0"
+                aria-pressed="false"
+              >
+                <span class="equipo-card__badge" aria-hidden="true">{{ eq.numero_inventario }}</span>
+                <span class="equipo-card__icon equipo-card__icon--{{ kind }}" aria-hidden="true">
+                  {% if kind == 'server' %}
+                  <svg viewBox="0 0 40 40" width="36" height="36" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <rect x="8" y="10" width="24" height="22" rx="2" stroke="currentColor" stroke-width="2"/>
+                    <path d="M8 16h24M8 22h24M8 28h24" stroke="currentColor" stroke-width="1.5" opacity="0.85"/>
+                    <circle cx="20" cy="13" r="1.2" fill="currentColor"/>
+                  </svg>
+                  {% elif kind == 'laptop' %}
+                  <svg viewBox="0 0 40 40" width="36" height="36" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <rect x="9" y="11" width="22" height="14" rx="2" stroke="currentColor" stroke-width="2"/>
+                    <path d="M7 27h26" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                    <path d="M14 17h12M14 21h8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" opacity="0.8"/>
+                  </svg>
+                  {% else %}
+                  <svg viewBox="0 0 40 40" width="36" height="36" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <rect x="9" y="10" width="22" height="16" rx="2" stroke="currentColor" stroke-width="2"/>
+                    <path d="M13 15h14M13 19h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" opacity="0.8"/>
+                    <path d="M12 30h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                  </svg>
+                  {% endif %}
+                </span>
+                <span class="equipo-card__body">
+                  <span class="equipo-card__tipo">{{ (eq.descripcion or 'Sin descripción')|e }}</span>
+                  <span class="equipo-card__meta">
+                    {% if eq.usuario %}<span class="equipo-card__user">{{ eq.usuario|e }}</span>{% else %}<span class="equipo-card__user equipo-card__user--muted">Sin usuario en inventario</span>{% endif %}
+                    {% if eq.departamento %}<span class="equipo-card__dept">{{ eq.departamento|e }}</span>{% endif %}
+                  </span>
+                </span>
+                <button type="button" class="equipo-card__info" data-equipo-info="{{ eq.numero_inventario }}" aria-label="Ver ficha del equipo {{ eq.numero_inventario }}">
+                  Ver ficha
+                </button>
+                <span class="equipo-card__check" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" width="22" height="22" fill="none"><path d="M6 12l4 4 8-8" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </span>
+              </div>
+            {% endfor %}
+          </div>
+          <div class="equipo-seleccionado" id="equipo-seleccionado-resumen" hidden>
+            <div class="equipo-seleccionado__texto">
+              <span class="equipo-seleccionado__label">Equipo seleccionado</span>
+              <strong class="equipo-seleccionado__inv" id="equipo-seleccionado-inv"></strong>
+              <span class="equipo-seleccionado__desc" id="equipo-seleccionado-desc"></span>
+            </div>
+            <button type="button" class="btn btn--secondary btn--sm" id="btn-ver-equipo-seleccionado">Ver ficha completa</button>
+          </div>
+          {% endif %}
+          {{ form.numero_inventario(
+            class_="equipo-picker__native",
+            **({"disabled": "disabled"} if equipos_en_area == 0 else {})
+          ) }}
+        </div>
+        {% for e in form.numero_inventario.errors %}<p class="field__error">{{ e }}</p>{% endfor %}
+      </div>
+      <div class="form-grid">
+        <div class="field">
+          {{ form.fecha_solicitud.label(class_="field__label") }}
+          {{ form.fecha_solicitud(class_="field__input", type="date") }}
+          {% for e in form.fecha_solicitud.errors %}<p class="field__error">{{ e }}</p>{% endfor %}
+        </div>
+        <div class="field">
+          {{ form.fecha_mantenimiento.label(class_="field__label") }}
+          {{ form.fecha_mantenimiento(class_="field__input", type="date") }}
+          {% for e in form.fecha_mantenimiento.errors %}<p class="field__error">{{ e }}</p>{% endfor %}
+        </div>
+      </div>
+      <div class="field field--block">
+        {{ form.observaciones.label(class_="field__label") }}
+        {{ form.observaciones(class_="field__input field__input--area") }}
+        {% for e in form.observaciones.errors %}<p class="field__error">{{ e }}</p>{% endfor %}
+      </div>
+      <div class="field field--block">
+        <span class="field__label" id="evidencias-lbl">Imágenes de evidencia (opcional)</span>
+        <div class="file-upload" data-file-upload>
+          <input
+            class="file-upload__input"
+            type="file"
+            name="evidencias"
+            id="evidencias"
+            accept="image/png,image/jpeg,image/webp,image/gif"
+            multiple
+            aria-labelledby="evidencias-lbl"
+          >
+          <label class="file-upload__dropzone" for="evidencias">
+            <span class="file-upload__icon" aria-hidden="true">
+              <svg viewBox="0 0 48 48" width="40" height="40" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <rect x="8" y="12" width="32" height="26" rx="4" stroke="currentColor" stroke-width="2"/>
+                <circle cx="18" cy="22" r="3" stroke="currentColor" stroke-width="2"/>
+                <path d="M8 32l8-8 6 6 10-12 8 10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </span>
+            <span class="file-upload__title">Arrastre imágenes aquí o haga clic para elegir</span>
+            <span class="file-upload__hint">PNG, JPG, WebP o GIF · hasta {{ max_upload_files }} archivos · máx. {{ max_upload_mb }} MB c/u</span>
+          </label>
+          <p class="file-upload__status" id="evidencias-status" aria-live="polite">Ningún archivo seleccionado</p>
+          <ul class="file-upload__preview" id="evidencias-preview" aria-label="Vista previa de imágenes"></ul>
+        </div>
+      </div>
+      <div class="form-actions">
+        {% if equipos_en_area > 0 %}
+          {{ form.enviar(class_="btn btn--primary") }}
+        {% else %}
+          {{ form.enviar(class_="btn btn--primary", disabled=True) }}
+        {% endif %}
+        <a class="btn btn--secondary" href="{{ url_for('main.inicio') }}">Cancelar</a>
+      </div>
+    </form>
+  </section>
+</div>
+
+<dialog class="info-modal info-modal--wide" id="dialogo-equipo" aria-labelledby="dialogo-equipo-titulo">
+  <div class="info-modal__panel">
+    <button type="button" class="info-modal__cerrar" id="dialogo-equipo-cerrar" aria-label="Cerrar ventana">&times;</button>
+    <h2 id="dialogo-equipo-titulo" class="info-modal__titulo">Ficha del equipo</h2>
+    <p class="info-modal__intro" id="dialogo-equipo-intro"></p>
+    <dl class="detail-grid detail-grid--modal" id="dialogo-equipo-datos"></dl>
+    <p class="info-modal__pie">
+      <button type="button" class="btn btn--primary btn--sm" id="dialogo-equipo-seleccionar">Usar este equipo</button>
+    </p>
+  </div>
+</dialog>
+
+{% if equipos_en_area > 0 %}
+<script type="application/json" id="equipos-area-data">{{ equipos_json | tojson }}</script>
+{% endif %}
+{% endblock %}
+{% block scripts %}
+<script>
+(function () {
+  var equiposMap = {};
+  var dataEl = document.getElementById("equipos-area-data");
+  if (dataEl) {
+    try {
+      var list = JSON.parse(dataEl.textContent || "[]");
+      for (var i = 0; i < list.length; i++) equiposMap[list[i].numero_inventario] = list[i];
+    } catch (e) { /* noop */ }
+  }
+
+  function dash(val) {
+    return val && String(val).trim() ? String(val).trim() : "—";
+  }
+
+  function escHtml(s) {
+    return String(s)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;");
+  }
+
+  function fmtFichaRows(eq) {
+    return [
+      ["N.º inventario", eq.numero_inventario],
+      ["N.º contable", eq.numero_contable],
+      ["Código contable", eq.codigo_contable],
+      ["Departamento", eq.departamento],
+      ["Área", eq.area],
+      ["Usuario asignado", eq.usuario],
+      ["Cargo", eq.cargo],
+      ["Descripción / tipo", eq.descripcion],
+      ["Marca y referencia", eq.marca_referencia],
+      ["Service tag", eq.service_tag],
+      ["Serial CPU", eq.serial_cpu],
+      ["Fecha adquisición", eq.fecha_adquisicion],
+      ["Observaciones", eq.observaciones]
+    ];
+  }
+
+  var dlg = document.getElementById("dialogo-equipo");
+  var dlgTitulo = document.getElementById("dialogo-equipo-titulo");
+  var dlgIntro = document.getElementById("dialogo-equipo-intro");
+  var dlgDatos = document.getElementById("dialogo-equipo-datos");
+  var dlgCerrar = document.getElementById("dialogo-equipo-cerrar");
+  var dlgSeleccionar = document.getElementById("dialogo-equipo-seleccionar");
+  var invModalActual = "";
+
+  function abrirFicha(inv) {
+    var eq = equiposMap[inv];
+    if (!eq || !dlg) return;
+    invModalActual = inv;
+    dlgTitulo.textContent = "Equipo " + inv;
+    dlgIntro.innerHTML = "Revise los datos del inventario antes de registrar la solicitud de mantenimiento.";
+    var html = "";
+    var rows = fmtFichaRows(eq);
+    for (var i = 0; i < rows.length; i++) {
+      var wide = rows[i][0] === "Observaciones" ? " detail-grid__wide" : "";
+      html += "<dt>" + escHtml(rows[i][0]) + "</dt><dd class=\"" + wide.trim() + "\">" + escHtml(dash(rows[i][1])) + "</dd>";
+    }
+    dlgDatos.innerHTML = html;
+    if (typeof dlg.showModal === "function") dlg.showModal();
+  }
+
+  if (dlgCerrar) dlgCerrar.addEventListener("click", function () { dlg.close(); });
+  if (dlg) dlg.addEventListener("click", function (e) { if (e.target === dlg) dlg.close(); });
+  if (dlgSeleccionar) dlgSeleccionar.addEventListener("click", function () {
+    if (invModalActual) setSelected(invModalActual);
+    dlg.close();
+  });
+
+  var wrap = document.querySelector("[data-equipo-cards]");
+  var sel = wrap ? wrap.querySelector("select.equipo-picker__native") : null;
+  var grid = wrap ? wrap.querySelector(".equipo-picker__grid") : null;
+  var resumen = document.getElementById("equipo-seleccionado-resumen");
+  var resumenInv = document.getElementById("equipo-seleccionado-inv");
+  var resumenDesc = document.getElementById("equipo-seleccionado-desc");
+  var btnVerSel = document.getElementById("btn-ver-equipo-seleccionado");
+  var cards = grid ? grid.querySelectorAll(".equipo-card") : [];
+
+  function setSelected(inv) {
+    for (var i = 0; i < cards.length; i++) {
+      var c = cards[i];
+      var on = c.getAttribute("data-inv") === inv;
+      c.classList.toggle("equipo-card--selected", on);
+      c.setAttribute("aria-pressed", on ? "true" : "false");
+    }
+    if (sel) sel.value = inv || "";
+    if (resumen) {
+      if (inv && equiposMap[inv]) {
+        resumen.hidden = false;
+        if (resumenInv) resumenInv.textContent = inv;
+        if (resumenDesc) {
+          var eq = equiposMap[inv];
+          resumenDesc.textContent = [eq.descripcion, eq.usuario].filter(Boolean).join(" · ");
+        }
+      } else {
+        resumen.hidden = true;
+      }
+    }
+  }
+
+  if (grid) {
+    grid.addEventListener("click", function (e) {
+      if (e.target.closest("[data-equipo-info]")) return;
+      var card = e.target.closest(".equipo-card");
+      if (!card) return;
+      setSelected(card.getAttribute("data-inv"));
+    });
+    grid.addEventListener("keydown", function (e) {
+      if (e.key !== "Enter" && e.key !== " ") return;
+      var card = e.target.closest(".equipo-card");
+      if (!card || e.target.closest("[data-equipo-info]")) return;
+      e.preventDefault();
+      setSelected(card.getAttribute("data-inv"));
+    });
+    grid.addEventListener("click", function (e) {
+      var btn = e.target.closest("[data-equipo-info]");
+      if (!btn) return;
+      e.stopPropagation();
+      abrirFicha(btn.getAttribute("data-equipo-info"));
+    });
+  }
+
+  if (btnVerSel) btnVerSel.addEventListener("click", function () {
+    if (sel && sel.value) abrirFicha(sel.value);
+  });
+
+  if (sel && sel.value) setSelected(sel.value);
+
+  var uploadWrap = document.querySelector("[data-file-upload]");
+  if (uploadWrap) {
+    var input = uploadWrap.querySelector(".file-upload__input");
+    var dropzone = uploadWrap.querySelector(".file-upload__dropzone");
+    var status = document.getElementById("evidencias-status");
+    var preview = document.getElementById("evidencias-preview");
+    var maxFiles = {{ max_upload_files }};
+
+    function renderPreview() {
+      if (!input || !preview || !status) return;
+      preview.innerHTML = "";
+      var files = input.files;
+      if (!files || !files.length) {
+        status.textContent = "Ningún archivo seleccionado";
+        return;
+      }
+      status.textContent = files.length + " archivo" + (files.length === 1 ? "" : "s") + " seleccionado" + (files.length === 1 ? "" : "s");
+      for (var i = 0; i < files.length; i++) {
+        var f = files[i];
+        var li = document.createElement("li");
+        li.className = "file-upload__thumb";
+        if (f.type && f.type.indexOf("image/") === 0) {
+          var img = document.createElement("img");
+          img.className = "file-upload__thumb-img";
+          img.alt = f.name;
+          img.src = URL.createObjectURL(f);
+          li.appendChild(img);
+        }
+        var cap = document.createElement("span");
+        cap.className = "file-upload__thumb-name";
+        cap.textContent = f.name;
+        li.appendChild(cap);
+        preview.appendChild(li);
+      }
+    }
+
+    if (input) input.addEventListener("change", renderPreview);
+
+    if (dropzone && input) {
+      ["dragenter", "dragover"].forEach(function (ev) {
+        dropzone.addEventListener(ev, function (e) {
+          e.preventDefault();
+          dropzone.classList.add("file-upload__dropzone--active");
+        });
+      });
+      ["dragleave", "drop"].forEach(function (ev) {
+        dropzone.addEventListener(ev, function (e) {
+          e.preventDefault();
+          dropzone.classList.remove("file-upload__dropzone--active");
+        });
+      });
+      dropzone.addEventListener("drop", function (e) {
+        if (!e.dataTransfer || !e.dataTransfer.files) return;
+        var dt = new DataTransfer();
+        var n = Math.min(e.dataTransfer.files.length, maxFiles);
+        for (var j = 0; j < n; j++) dt.items.add(e.dataTransfer.files[j]);
+        input.files = dt.files;
+        renderPreview();
+      });
+    }
+  }
+})();
+</script>
+{% endblock %}

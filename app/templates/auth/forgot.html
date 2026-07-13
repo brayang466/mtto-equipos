@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}Recuperar contraseña{% endblock %}
+{% block body_class %}page--app{% endblock %}
+{% block content %}
+<div class="app-shell app-shell--narrow anim-fade-in-up">
+  <header class="page-head page-head--auth">
+    <h1 class="page-title page-title--app">Recuperar contraseña</h1>
+    <p class="page-lead page-lead--app">Indique su <strong>usuario</strong> y el <strong>correo</strong> de la cuenta. Solo se restablecerá la clave de esa combinación (aunque el correo esté en otras cuentas).</p>
+  </header>
+  <section class="panel panel--app panel--accent-app">
+    <form method="post" class="auth-form" novalidate>
+      {{ form.hidden_tag() }}
+      <div class="field">
+        {{ form.username.label(class_="field__label") }}
+        {{ form.username(class_="field__input", autocomplete="username") }}
+        {% for e in form.username.errors %}<p class="field__error">{{ e }}</p>{% endfor %}
+      </div>
+      <div class="field">
+        {{ form.email.label(class_="field__label") }}
+        {{ form.email(class_="field__input", autocomplete="email") }}
+        {% for e in form.email.errors %}<p class="field__error">{{ e }}</p>{% endfor %}
+      </div>
+      <div class="form-actions form-actions--stack">
+        {{ form.submit(class_="btn btn--primary btn--block") }}
+      </div>
+    </form>
+  </section>
+</div>
+{% endblock %}

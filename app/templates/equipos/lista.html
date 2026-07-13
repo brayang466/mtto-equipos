@@ -1,64 +1,90 @@
 {% extends "base.html" %}
+{% from "macros/nav.html" import back_link %}
 {% block title %}Inventario{% endblock %}
+{% block body_class %}page--app page--inventario{% endblock %}
 {% block content %}
-<p class="breadcrumb"><a href="{{ url_for('main.inicio') }}">Inicio</a> · <span class="breadcrumb__here">Inventario</span></p>
-<h1 class="page-title">Inventario de equipos</h1>
-<p class="page-lead">Consulte el inventario y abra cada equipo para registrar el mantenimiento preventivo 2026.</p>
+<div class="app-shell anim-fade-in-up">
+  <header class="page-head page-head--inventario">
+    {{ back_link(url_for('main.inicio'), "Volver al inicio") }}
+    <p class="breadcrumb breadcrumb--on-light">
+      <a href="{{ url_for('main.inicio') }}">Inicio</a>
+      · <span class="breadcrumb__here">Inventario</span>
+    </p>
+    <h1 class="page-title page-title--app">Inventario de equipos</h1>
+    <p class="page-lead page-lead--app">
+      Consulte el inventario, edite datos del equipo y registre el mantenimiento preventivo <strong>2026</strong>.
+      <a class="link link--pill" href="{{ url_for('equipos.solicitudes_lista', next=request.full_path) }}">Ver solicitudes</a>
+    </p>
+  </header>
 
-<form class="search-bar" method="get" action="{{ url_for('equipos.lista') }}">
-  <label for="q">Buscar</label>
-  <input type="search" id="q" name="q" value="{{ q }}" placeholder="Inventario, contable, departamento, usuario…" autocomplete="off">
-  <button type="submit">Buscar</button>
-  {% if q %}
-    <a class="btn btn--ghost" href="{{ url_for('equipos.lista') }}">Limpiar</a>
-  {% endif %}
-</form>
-
-{% if pagination.total == 0 %}
-  <p class="empty-state">No hay equipos que coincidan con la búsqueda.</p>
-{% else %}
-  <p class="meta">{{ pagination.total }} equipo(s) · página {{ pagination.page }} de {{ pagination.pages or 1 }}</p>
-
-  <div class="table-wrap">
-    <table class="data-table">
-      <thead>
-        <tr>
-          <th>N.º inventario</th>
-          <th>N.º contable</th>
-          <th>Departamento</th>
-          <th>Usuario</th>
-          <th>Descripción</th>
-          <th>1.er sem. 2026</th>
-          <th>2.do sem. 2026</th>
-          <th></th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for e in pagination.items %}
-        <tr>
-          <td><strong>{{ e.numero_inventario }}</strong></td>
-          <td>{{ e.numero_contable or "—" }}</td>
-          <td>{{ e.departamento or "—" }}</td>
-          <td>{{ e.usuario or "—" }}</td>
-          <td class="cell-muted">{{ e.descripcion or "—" }}</td>
-          <td>{% if e.mtto_realizado_1s_2026 %}<span class="badge badge--ok">Sí</span>{% else %}<span class="badge">No</span>{% endif %}</td>
-          <td>{% if e.mtto_realizado_2s_2026 %}<span class="badge badge--ok">Sí</span>{% else %}<span class="badge">No</span>{% endif %}</td>
-          <td><a class="link" href="{{ url_for('equipos.detalle', equipo_id=e.id) }}">Detalle</a></td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
+  <div class="inv-stats anim-fade-in-up anim-delay-1">
+    <div class="inv-stat-card">
+      <span class="inv-stat-card__value">{{ total_equipos }}</span>
+      <span class="inv-stat-card__label">Equipos{% if q %} (filtrados){% endif %}</span>
+    </div>
+    <div class="inv-stat-card inv-stat-card--b">
+      <span class="inv-stat-card__value">{{ pagination.page }}</span>
+      <span class="inv-stat-card__label">Página / {{ pagination.pages or 1 }}</span>
+    </div>
   </div>
 
-  {% if pagination.pages > 1 %}
-  <nav class="pagination" aria-label="Paginación">
-    {% if pagination.has_prev %}
-      <a href="{{ url_for('equipos.lista', page=pagination.prev_num, q=q) }}">← Anterior</a>
+  <form class="search-bar search-bar--modern inv-search anim-fade-in-up anim-delay-2" method="get" action="{{ url_for('equipos.lista') }}">
+    <label for="q">Buscar</label>
+    <input type="search" id="q" name="q" value="{{ q }}" placeholder="Inventario, contable, departamento, usuario…" autocomplete="off">
+    <button type="submit" class="btn btn--primary btn--sm">Buscar</button>
+    {% if q %}
+      <a class="btn btn--ghost btn--ghost-app" href="{{ url_for('equipos.lista') }}">Limpiar</a>
     {% endif %}
-    {% if pagination.has_next %}
-      <a href="{{ url_for('equipos.lista', page=pagination.next_num, q=q) }}">Siguiente →</a>
+  </form>
+
+  {% if pagination.total == 0 %}
+    <p class="empty-state empty-state--app anim-fade-in-up">No hay equipos que coincidan con la búsqueda.</p>
+  {% else %}
+    <div class="table-wrap table-wrap--modern inv-table-wrap anim-fade-in-up anim-delay-3">
+      <table class="data-table data-table--modern data-table--inv">
+        <thead>
+          <tr>
+            <th>N.º inventario</th>
+            <th>N.º contable</th>
+            <th>Departamento</th>
+            <th>Usuario</th>
+            <th>Descripción</th>
+            <th>1.er sem.</th>
+            <th>2.do sem.</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for e in pagination.items %}
+          <tr class="inv-row inv-row--enter">
+            <td><span class="inv-pill inv-pill--glow">{{ e.numero_inventario }}</span></td>
+            <td>{{ e.numero_contable or "—" }}</td>
+            <td>{{ e.departamento or "—" }}</td>
+            <td class="cell-clip" title="{{ e.usuario or '' }}">{{ e.usuario or "—" }}</td>
+            <td class="cell-muted cell-clip" title="{{ e.descripcion or '' }}">{{ e.descripcion or "—" }}</td>
+            <td>{% if e.mtto_realizado_1s_2026 %}<span class="badge badge--ok">Sí</span>{% else %}<span class="badge badge--no">No</span>{% endif %}</td>
+            <td>{% if e.mtto_realizado_2s_2026 %}<span class="badge badge--ok">Sí</span>{% else %}<span class="badge badge--no">No</span>{% endif %}</td>
+            <td class="cell-actions cell-actions--stack">
+              <a class="link link--pill" href="{{ url_for('equipos.detalle', equipo_id=e.id, next=request.full_path) }}">Detalle</a>
+              <a class="link link--pill link--pill-muted" href="{{ url_for('equipos.editar', equipo_id=e.id, next=request.full_path) }}">Editar</a>
+              <a class="link link--pill link--pill-tic" href="{{ url_for('equipos.solicitud_tic', equipo_id=e.id, next=request.full_path) }}" title="Solicitar mantenimiento al usuario asignado">Solicitar mtto.</a>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    {% if pagination.pages > 1 %}
+    <nav class="pagination pagination--app" aria-label="Paginación">
+      {% if pagination.has_prev %}
+        <a href="{{ url_for('equipos.lista', page=pagination.prev_num, q=q) }}">← Anterior</a>
+      {% endif %}
+      {% if pagination.has_next %}
+        <a href="{{ url_for('equipos.lista', page=pagination.next_num, q=q) }}">Siguiente →</a>
+      {% endif %}
+    </nav>
     {% endif %}
-  </nav>
   {% endif %}
-{% endif %}
+</div>
 {% endblock %}

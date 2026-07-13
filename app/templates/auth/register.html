@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+{% block title %}Registro{% endblock %}
+{% block body_class %}page--app{% endblock %}
+{% block extra_head %}
+<style>
+  .reg-hint { font-size: 0.82rem; color: #64748b; margin: 0.25rem 0 0; }
+  .reg-live { font-size: 0.82rem; margin-top: 0.35rem; min-height: 1.2em; }
+  .reg-live--ok { color: #6ee7b7; font-weight: 700; }
+  .reg-live--bad { color: #fca5a5; font-weight: 700; }
+</style>
+{% endblock %}
+{% block content %}
+<div class="app-shell app-shell--narrow anim-fade-in-up">
+  <header class="page-head page-head--auth">
+    <h1 class="page-title page-title--app">Crear cuenta</h1>
+    <p class="page-lead page-lead--app">Usuario <strong>nombre.apellido</strong>, correo <strong>@colbeef.com</strong>, contraseña segura y área.</p>
+  </header>
+  <section class="panel panel--app panel--accent-app">
+    <form method="post" class="auth-form" id="form-registro" novalidate>
+      {{ form.hidden_tag() }}
+      <div class="field">
+        {{ form.username.label(class_="field__label") }}
+        {{ form.username(class_="field__input", id="reg_username", autocomplete="username", autocapitalize="none") }}
+        <p class="reg-hint">Solo letras minúsculas y un punto (ej. maria.perez).</p>
+        <div class="reg-live" id="live_username" aria-live="polite"></div>
+        {% for e in form.username.errors %}<p class="field__error">{{ e }}</p>{% endfor %}
+      </div>
+      <div class="field">
+        {{ form.email.label(class_="field__label") }}
+        {{ form.email(class_="field__input", id="reg_email", autocomplete="email") }}
+        <div class="reg-live" id="live_email" aria-live="polite"></div>
+        {% for e in form.email.errors %}<p class="field__error">{{ e }}</p>{% endfor %}
+      </div>
+      <div class="field">
+        {{ form.area.label(class_="field__label") }}
+        <div class="select-wrap">
+          {{ form.area(class_="field__input field__input--select") }}
+        </div>
+        {% for e in form.area.errors %}<p class="field__error">{{ e }}</p>{% endfor %}
+      </div>
+      <div class="field">
+        {{ form.password.label(class_="field__label") }}
+        {{ form.password(class_="field__input", id="reg_password", autocomplete="new-password") }}
+        <p class="reg-hint">Mínimo 8 caracteres, una mayúscula y un símbolo.</p>
+        <div class="reg-live" id="live_password" aria-live="polite"></div>
+        {% for e in form.password.errors %}<p class="field__error">{{ e }}</p>{% endfor %}
+      </div>
+      <div class="field">
+        {{ form.password2.label(class_="field__label") }}
+        {{ form.password2(class_="field__input", id="reg_password2", autocomplete="new-password") }}
+        <div class="reg-live" id="live_password2" aria-live="polite"></div>
+        {% for e in form.password2.errors %}<p class="field__error">{{ e }}</p>{% endfor %}
+      </div>
+      <div class="form-actions form-actions--stack">
+        {{ form.submit(class_="btn btn--primary btn--block") }}
+      </div>
+    </form>
+  </section>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+(function () {
+  var uRe = /^[a-zñáéíóúü]+(\.[a-zñáéíóúü]+)+$/i;
+  var emailRe = /@colbeef\.com$/i;
+  function setLive(el, ok, text) {
+    if (!el) return;
+    el.textContent = text || "";
+    el.className = "reg-live" + (text ? (ok ? " reg-live--ok" : " reg-live--bad") : "");
+  }
+  var nu = document.getElementById("reg_username");
+  var ne = document.getElementById("reg_email");
+  var np = document.getElementById("reg_password");
+  var n2 = document.getElementById("reg_password2");
+  if (nu) nu.addEventListener("input", function () {
+    var v = nu.value.trim();
+    if (!v) { setLive(document.getElementById("live_username"), true, ""); return; }
+    setLive(document.getElementById("live_username"), uRe.test(v), uRe.test(v) ? "Formato de usuario válido." : "Use nombre.apellido (letras y un punto).");
+  });
+  if (ne) ne.addEventListener("input", function () {
+    var v = ne.value.trim().toLowerCase();
+    if (!v) { setLive(document.getElementById("live_email"), true, ""); return; }
+    setLive(document.getElementById("live_email"), emailRe.test(v), emailRe.test(v) ? "Dominio corporativo reconocido." : "El correo debe terminar en @colbeef.com.");
+  });
+  function pwdOk(pw) {
+    if ((pw || "").length < 8) return "Al menos 8 caracteres.";
+    if (!/[A-ZÁÉÍÓÚÑ]/.test(pw)) return "Incluya una mayúscula.";
+    if (!/[^\w\s]/.test(pw)) return "Incluya un símbolo (ej. * # !).";
+    return "";
+  }
+  if (np) np.addEventListener("input", function () {
+    var pw = np.value;
+    var msg = pwdOk(pw);
+    setLive(document.getElementById("live_password"), !msg, msg ? msg : "Contraseña cumple reglas básicas.");
+  });
+  if (n2 && np) n2.addEventListener("input", function () {
+    if (!n2.value && !np.value) { setLive(document.getElementById("live_password2"), true, ""); return; }
+    var ok = n2.value === np.value && np.value.length > 0;
+    setLive(document.getElementById("live_password2"), ok, ok ? "Las contraseñas coinciden." : "Las contraseñas no coinciden.");
+  });
+})();
+</script>
+{% endblock %}

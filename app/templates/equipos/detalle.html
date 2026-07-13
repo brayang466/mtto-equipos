@@ -1,47 +1,106 @@
 {% extends "base.html" %}
+{% from "macros/nav.html" import back_link %}
 {% block title %}Equipo {{ equipo.numero_inventario }}{% endblock %}
+{% block body_class %}page--app{% endblock %}
 {% block content %}
-<p class="breadcrumb">
-  <a href="{{ url_for('main.inicio') }}">Inicio</a>
-  · <a href="{{ url_for('equipos.lista') }}">Inventario</a>
-  · <span class="breadcrumb__here">Equipo {{ equipo.numero_inventario }}</span>
-</p>
+<div class="app-shell anim-fade-in-up">
+  <header class="page-head">
+    {{ back_link(back_url, "Volver al inventario") }}
+    <p class="breadcrumb breadcrumb--on-light">
+      <a href="{{ url_for('main.inicio') }}">Inicio</a>
+      · <a href="{{ url_for('equipos.lista') }}">Inventario</a>
+      · <span class="breadcrumb__here">Equipo {{ equipo.numero_inventario }}</span>
+    </p>
+    <h1 class="page-title page-title--app">Equipo <span class="inv-pill inv-pill--lg">{{ equipo.numero_inventario }}</span></h1>
+  </header>
 
-<h1 class="page-title">Equipo {{ equipo.numero_inventario }}</h1>
+  <section class="panel panel--app">
+    <div class="panel__headrow">
+      <h2 class="panel__title panel__title--accent">Datos del inventario</h2>
+      <a class="btn btn--secondary btn--sm" href="{{ url_for('equipos.editar', equipo_id=equipo.id, next=list_next_hidden) }}">Editar asignación</a>
+    </div>
+    <dl class="detail-grid">
+      <dt>N.º contable</dt><dd>{{ equipo.numero_contable or "—" }}</dd>
+      <dt>Código contable</dt><dd>{{ equipo.codigo_contable or "—" }}</dd>
+      <dt>Departamento</dt><dd>{{ equipo.departamento or "—" }}</dd>
+      <dt>Área</dt><dd>{{ equipo.area or "—" }}</dd>
+      <dt>Usuario</dt><dd>{{ equipo.usuario or "—" }}</dd>
+      <dt>Cargo</dt><dd>{{ equipo.cargo or "—" }}</dd>
+      <dt>Descripción</dt><dd>{{ equipo.descripcion or "—" }}</dd>
+      <dt>Marca y referencia</dt><dd>{{ equipo.marca_referencia or "—" }}</dd>
+      <dt>Service tag / product name</dt><dd>{{ equipo.service_tag or "—" }}</dd>
+      <dt>Serial CPU</dt><dd>{{ equipo.serial_cpu or "—" }}</dd>
+      <dt>Fecha adquisición</dt><dd>{{ equipo.fecha_adquisicion.strftime("%d/%m/%Y") if equipo.fecha_adquisicion else "—" }}</dd>
+      <dt>Observaciones</dt><dd class="detail-grid__wide">{{ equipo.observaciones or "—" }}</dd>
+    </dl>
+  </section>
 
-<section class="panel">
-  <h2 class="panel__title">Datos del inventario</h2>
-  <dl class="detail-grid">
-    <dt>N.º contable</dt><dd>{{ equipo.numero_contable or "—" }}</dd>
-    <dt>Código contable</dt><dd>{{ equipo.codigo_contable or "—" }}</dd>
-    <dt>Departamento</dt><dd>{{ equipo.departamento or "—" }}</dd>
-    <dt>Área</dt><dd>{{ equipo.area or "—" }}</dd>
-    <dt>Usuario</dt><dd>{{ equipo.usuario or "—" }}</dd>
-    <dt>Cargo</dt><dd>{{ equipo.cargo or "—" }}</dd>
-    <dt>Descripción</dt><dd>{{ equipo.descripcion or "—" }}</dd>
-    <dt>Marca y referencia</dt><dd>{{ equipo.marca_referencia or "—" }}</dd>
-    <dt>Service tag / product name</dt><dd>{{ equipo.service_tag or "—" }}</dd>
-    <dt>Serial CPU</dt><dd>{{ equipo.serial_cpu or "—" }}</dd>
-    <dt>Fecha adquisición</dt><dd>{{ equipo.fecha_adquisicion.strftime("%d/%m/%Y") if equipo.fecha_adquisicion else "—" }}</dd>
-    <dt>Observaciones</dt><dd class="detail-grid__wide">{{ equipo.observaciones or "—" }}</dd>
-  </dl>
-</section>
+  <section class="panel panel--app panel--accent-app">
+    <h2 class="panel__title panel__title--accent">Mantenimiento preventivo 2026</h2>
+    <form method="post" class="mtto-form" novalidate>
+      {{ form.hidden_tag() }}
+      {% if list_next_hidden %}
+      <input type="hidden" name="next" value="{{ list_next_hidden }}">
+      {% endif %}
+      <div class="checkbox-row">
+        {{ form.mtto_realizado_1s_2026(class_="checkbox") }}
+        {{ form.mtto_realizado_1s_2026.label(class_="checkbox-label") }}
+      </div>
+      <div class="checkbox-row">
+        {{ form.mtto_realizado_2s_2026(class_="checkbox") }}
+        {{ form.mtto_realizado_2s_2026.label(class_="checkbox-label") }}
+      </div>
+      <div class="form-actions">
+        {{ form.guardar(class_="btn btn--primary") }}
+      </div>
+    </form>
+  </section>
 
-<section class="panel panel--accent">
-  <h2 class="panel__title">Mantenimiento preventivo 2026</h2>
-  <form method="post" class="mtto-form" novalidate>
-    {{ form.hidden_tag() }}
-    <div class="checkbox-row">
-      {{ form.mtto_realizado_1s_2026(class_="checkbox") }}
-      {{ form.mtto_realizado_1s_2026.label(class_="checkbox-label") }}
+  <section class="panel panel--app">
+    <div class="panel__headrow">
+      <h2 class="panel__title panel__title--accent">Solicitudes de mantenimiento</h2>
+      <a class="btn btn--secondary btn--sm" href="{{ url_for('equipos.solicitud_nueva', equipo_id=equipo.id, next=list_next_hidden) }}">Nueva solicitud</a>
     </div>
-    <div class="checkbox-row">
-      {{ form.mtto_realizado_2s_2026(class_="checkbox") }}
-      {{ form.mtto_realizado_2s_2026.label(class_="checkbox-label") }}
-    </div>
-    <div class="form-actions">
-      {{ form.guardar(class_="btn btn--primary") }}
-    </div>
-  </form>
-</section>
+    {% if solicitudes %}
+    <ul class="solicitud-list">
+      {% for s in solicitudes %}
+      <li class="solicitud-list__item">
+        <div class="solicitud-list__meta">
+          <span class="solicitud-list__id">#{{ s.id }}</span>
+          <span>{{ s.fecha_solicitud.strftime("%d/%m/%Y") }}</span>
+          {% if s.estado == 'pendiente' %}
+          <span class="badge badge--no">Pendiente</span>
+          {% else %}
+          <span class="badge badge--ok">Atendida</span>
+          {% endif %}
+          {% if s.fecha_mantenimiento %}
+          <span class="solicitud-list__pill">Mantenimiento: {{ s.fecha_mantenimiento.strftime("%d/%m/%Y") }}</span>
+          {% endif %}
+        </div>
+        {% if s.observaciones %}
+        <p class="solicitud-list__obs">{{ s.observaciones }}</p>
+        {% endif %}
+        {% if s.adjuntos.count() %}
+        <div class="thumb-strip thumb-strip--inline solicitud-list__thumbs">
+          {% for a in s.adjuntos %}
+          <a class="thumb-strip__link" href="{{ url_for('equipos.adjunto_ver', adjunto_id=a.id) }}" target="_blank" rel="noopener">
+            <img class="thumb-strip__img" src="{{ url_for('equipos.adjunto_ver', adjunto_id=a.id) }}" alt="" loading="lazy" width="56" height="56">
+          </a>
+          {% endfor %}
+        </div>
+        {% endif %}
+      </li>
+      {% endfor %}
+    </ul>
+    <p class="meta meta--app meta--tight">
+      <a class="link link--pill" href="{{ url_for('equipos.solicitudes_lista', equipo_id=equipo.id) }}">Ver todas las solicitudes de este equipo</a>
+    </p>
+    {% else %}
+    <p class="empty-state empty-state--inline">Aún no hay solicitudes para este equipo.</p>
+    <p class="meta meta--app">
+      <a class="btn btn--secondary" href="{{ url_for('equipos.solicitud_nueva', equipo_id=equipo.id, next=list_next_hidden) }}">Registrar primera solicitud</a>
+    </p>
+    {% endif %}
+  </section>
+</div>
 {% endblock %}

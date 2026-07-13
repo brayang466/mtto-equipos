@@ -4,19 +4,47 @@
 {% block content %}
 <section class="hero" aria-labelledby="hero-title">
   <div class="hero__glow" aria-hidden="true"></div>
-  <div class="hero__inner anim-fade-in-up">
-    <p class="hero__eyebrow anim-fade-in" style="animation-delay: 0.05s">Inventario corporativo</p>
+  <div class="hero__inner hero--stagger">
+    <div class="hero__brand-icon" aria-hidden="true">
+      <svg class="hero__brand-svg" viewBox="0 0 64 64" width="72" height="72" xmlns="http://www.w3.org/2000/svg">
+        <defs> 
+          <linearGradient id="heroPcIconGrad" x1="8" y1="8" x2="56" y2="56" gradientUnits="userSpaceOnUse">
+            <stop stop-color="#38bdf8"/><stop offset="0.5" stop-color="#818cf8"/><stop offset="1" stop-color="#22d3ee"/>
+          </linearGradient>
+        </defs>
+        <rect x="6" y="10" width="52" height="34" rx="5" fill="none" stroke="url(#heroPcIconGrad)" stroke-width="3"/>
+        <rect x="12" y="16" width="40" height="22" rx="2" fill="rgba(56, 189, 248, 0.12)" stroke="url(#heroPcIconGrad)" stroke-width="2"/>
+        <path d="M22 46h20" stroke="url(#heroPcIconGrad)" stroke-width="3" stroke-linecap="round"/>
+        <path d="M32 44v6" stroke="url(#heroPcIconGrad)" stroke-width="3" stroke-linecap="round"/>
+      </svg>
+    </div>
+    <p class="hero__eyebrow">Inventario corporativo</p>
     <h1 id="hero-title" class="hero__title">
       <span class="hero__title-line">Mantenimiento preventivo</span>
       <span class="hero__title-accent">equipos de cómputo</span>
     </h1>
-    <p class="hero__text anim-fade-in" style="animation-delay: 0.15s">
+    <p class="hero__text">
+      {% if not current_user.is_authenticated %}
+      Portal interno: inicie sesión para acceder según su perfil (inventario y gestión para TIC;
+      registro de solicitudes de mantenimiento para el resto del personal).
+      {% elif current_user.is_superadmin() %}
       Consulte el inventario activo, el detalle de cada equipo y registre el cumplimiento
       del mantenimiento preventivo <strong>2026</strong> por semestre.
+      {% else %}
+      Registre una solicitud de mantenimiento para su equipo de cómputo. El área de tecnología
+      recibirá la notificación en <strong>tecnologia@colbeef.com</strong>.
+      {% endif %}
     </p>
-    <div class="hero__actions anim-fade-in" style="animation-delay: 0.25s">
+    <div class="hero__actions">
+      {% if not current_user.is_authenticated %}
+      {% elif current_user.is_superadmin() %}
       <a class="btn btn--primary btn--lg btn--pulse" href="{{ url_for('equipos.lista') }}">Ir al inventario</a>
-      <a class="btn btn--glass btn--lg" href="#funciones">Qué puede hacer aquí</a>
+      {% else %}
+      <a class="btn btn--primary btn--lg btn--pulse" href="{{ url_for('main.registrar_solicitud') }}">Registrar solicitud de mantenimiento</a>
+      {% endif %}
+      <button type="button" class="btn btn--glass btn--lg" id="btn-info-programa" aria-haspopup="dialog" aria-controls="dialogo-programa">
+        Qué puede hacer aquí
+      </button>
     </div>
   </div>
 </section>
@@ -33,4 +61,91 @@
     <p class="feature-card__text">Marque 1.er y 2.do semestre desde la ficha de cada equipo.</p>
   </article>
 </section>
+
+<dialog class="info-modal" id="dialogo-programa" aria-labelledby="dialogo-programa-titulo">
+  <div class="info-modal__panel">
+    <button type="button" class="info-modal__cerrar" id="info-modal-cerrar" aria-label="Cerrar ventana">&times;</button>
+    <h2 id="dialogo-programa-titulo" class="info-modal__titulo">¿Qué es esta aplicación?</h2>
+    <p class="info-modal__intro">
+      Es una herramienta interna para el área de sistemas y quienes coordinen el mantenimiento:
+      permite ver el <strong>inventario activo</strong> de equipos de cómputo y llevar un registro claro del
+      <strong>mantenimiento preventivo 2026</strong>, semestre por semestre, sin depender solo de hojas de cálculo sueltas.
+    </p>
+
+    <ul class="info-modal__lista">
+      <li class="info-modal__item">
+        <div class="info-modal__icono" aria-hidden="true">
+          <svg viewBox="0 0 48 48" width="48" height="48" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect x="8" y="6" width="32" height="36" rx="3" stroke="url(#g1)" stroke-width="2"/>
+            <path d="M14 16h20M14 22h14M14 28h20" stroke="url(#g1)" stroke-width="2" stroke-linecap="round"/>
+            <circle cx="34" cy="14" r="6" fill="#0f172a" stroke="url(#g1)" stroke-width="2"/>
+            <path d="M31 14l2 2 4-4" stroke="#22d3ee" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+            <defs>
+              <linearGradient id="g1" x1="8" y1="6" x2="40" y2="42" gradientUnits="userSpaceOnUse">
+                <stop stop-color="#38bdf8"/><stop offset="1" stop-color="#818cf8"/>
+              </linearGradient>
+            </defs>
+          </svg>
+        </div>
+        <div>
+          <h3 class="info-modal__subtitulo">Buscar y consultar equipos</h3>
+          <p class="info-modal__texto">En <strong>Inventario</strong> verá la lista oficial. Use el buscador para localizar un equipo por número de inventario, contable, departamento o usuario asignado.</p>
+        </div>
+      </li>
+      <li class="info-modal__item">
+        <div class="info-modal__icono" aria-hidden="true">
+          <svg viewBox="0 0 48 48" width="48" height="48" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect x="10" y="8" width="28" height="32" rx="3" stroke="url(#g2)" stroke-width="2"/>
+            <path d="M10 18h28" stroke="url(#g2)" stroke-width="2"/>
+            <path d="M16 26h6v6h-6z" fill="rgba(56,189,248,0.35)" stroke="#38bdf8" stroke-width="1.5" rx="1"/>
+            <path d="M28 26h6v6h-6z" fill="rgba(129,140,248,0.25)" stroke="#818cf8" stroke-width="1.5" rx="1"/>
+            <path d="M19 29h1M31 29h1" stroke="#e2e8f0" stroke-width="2" stroke-linecap="round"/>
+            <defs>
+              <linearGradient id="g2" x1="10" y1="8" x2="38" y2="40" gradientUnits="userSpaceOnUse">
+                <stop stop-color="#22d3ee"/><stop offset="1" stop-color="#6366f1"/>
+              </linearGradient>
+            </defs>
+          </svg>
+        </div>
+        <div>
+          <h3 class="info-modal__subtitulo">Registrar mantenimiento 2026</h3>
+          <p class="info-modal__texto">Abra <strong>Detalle</strong> en un equipo y marque si ya se realizó el mantenimiento del <strong>1.er semestre</strong> y/o del <strong>2.do semestre</strong> de 2026. Los cambios se guardan en la base de datos para consultas posteriores.</p>
+        </div>
+      </li>
+    </ul>
+
+    <p class="info-modal__pie">
+      <a class="info-modal__enlace" href="#funciones">Ver resumen en la página</a>
+      {% if current_user.is_authenticated and current_user.is_superadmin() %}
+      ·
+      <a class="info-modal__enlace" href="{{ url_for('equipos.lista') }}">Ir al inventario</a>
+      {% elif current_user.is_authenticated %}
+      ·
+      <a class="info-modal__enlace" href="{{ url_for('main.registrar_solicitud') }}">Registrar solicitud</a>
+      {% endif %}
+    </p>
+  </div>
+</dialog>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function () {
+  var dlg = document.getElementById("dialogo-programa");
+  var btn = document.getElementById("btn-info-programa");
+  var cerrar = document.getElementById("info-modal-cerrar");
+  if (!dlg || !btn) return;
+
+  btn.addEventListener("click", function () {
+    if (typeof dlg.showModal === "function") dlg.showModal();
+  });
+  if (cerrar) cerrar.addEventListener("click", function () { dlg.close(); });
+  dlg.addEventListener("click", function (e) {
+    if (e.target === dlg) dlg.close();
+  });
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "Escape" && dlg.open) dlg.close();
+  });
+})();
+</script>
 {% endblock %}

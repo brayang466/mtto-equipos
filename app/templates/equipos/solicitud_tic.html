@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% from "macros/nav.html" import back_link %}
+{% block title %}Solicitar mantenimiento (TIC){% endblock %}
+{% block body_class %}page--app{% endblock %}
+{% block content %}
+<div class="app-shell anim-fade-in-up">
+  <header class="page-head">
+    {{ back_link(back_url, "Volver al inventario") }}
+    <h1 class="page-title page-title--app">Solicitar mantenimiento</h1>
+    <p class="page-lead page-lead--app">
+      Equipo <span class="inv-pill">{{ equipo.numero_inventario }}</span>
+      — {{ equipo.descripcion or "Sin descripción" }}.
+      El usuario seleccionado deberá <strong>aprobar o denegar</strong> y proponer fecha.
+    </p>
+  </header>
+  <section class="panel panel--app panel--accent-app">
+    {% if usuarios_area == 0 %}
+      <p class="empty-state--app empty-state--inline">
+        No hay usuarios del portal en el área <strong>{{ equipo.area or "—" }}</strong>.
+        Registre usuarios con esa área o edite el equipo antes de solicitar.
+      </p>
+    {% endif %}
+    <form method="post" class="solicitud-form" novalidate>
+      {{ form.hidden_tag() }}
+      {% if list_next_hidden %}<input type="hidden" name="next" value="{{ list_next_hidden }}">{% endif %}
+      <div class="field">
+        {{ form.usuario_aprobador_id.label(class_="field__label") }}
+        <div class="select-wrap">
+          {{ form.usuario_aprobador_id(class_="field__input field__input--select", disabled=usuarios_area == 0) }}
+        </div>
+        {% for e in form.usuario_aprobador_id.errors %}<p class="field__error">{{ e }}</p>{% endfor %}
+      </div>
+      <div class="form-grid">
+        <div class="field">
+          {{ form.fecha_solicitud.label(class_="field__label") }}
+          {{ form.fecha_solicitud(class_="field__input", type="date") }}
+        </div>
+        <div class="field">
+          {{ form.fecha_mantenimiento.label(class_="field__label") }}
+          {{ form.fecha_mantenimiento(class_="field__input", type="date") }}
+        </div>
+      </div>
+      <div class="field field--block">
+        {{ form.observaciones.label(class_="field__label") }}
+        {{ form.observaciones(class_="field__input field__input--area") }}
+      </div>
+      <div class="form-actions">
+        {% if usuarios_area > 0 %}
+          {{ form.enviar(class_="btn btn--primary") }}
+        {% else %}
+          {{ form.enviar(class_="btn btn--primary", disabled=True) }}
+        {% endif %}
+        <a class="btn btn--secondary" href="{{ back_url }}">Cancelar</a>
+      </div>
+    </form>
+  </section>
+</div>
+{% endblock %}

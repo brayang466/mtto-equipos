@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+{% from "macros/nav.html" import back_link %}
+{% block title %}Editar equipo {{ equipo.numero_inventario }}{% endblock %}
+{% block body_class %}page--app{% endblock %}
+{% block content %}
+<div class="app-shell anim-fade-in-up">
+  <header class="page-head">
+    {{ back_link(back_url, "Volver al detalle") }}
+    <p class="breadcrumb breadcrumb--on-light">
+      <a href="{{ url_for('main.inicio') }}">Inicio</a>
+      · <a href="{{ url_for('equipos.lista') }}">Inventario</a>
+      · <a href="{{ url_for('equipos.detalle', equipo_id=equipo.id, next=list_next_hidden) }}">Equipo {{ equipo.numero_inventario }}</a>
+      · <span class="breadcrumb__here">Editar asignación</span>
+    </p>
+    <h1 class="page-title page-title--app">Editar equipo <span class="inv-pill inv-pill--lg">{{ equipo.numero_inventario }}</span></h1>
+    <p class="page-lead page-lead--app">
+      Solo puede modificar <strong>departamento, área, cargo y usuario asignado</strong>. El resto del inventario es de solo lectura.
+      Para equipos dados de baja use la opción de eliminar al final.
+    </p>
+  </header>
+
+  <section class="panel panel--app">
+    <h2 class="panel__title panel__title--accent">Datos fijos del inventario</h2>
+    <p class="field__hint field__hint--block">Estos campos no se editan desde aquí; si requieren corrección masiva, use la importación o contacte a TIC.</p>
+    <dl class="detail-grid">
+      <dt>N.º inventario</dt><dd>{{ equipo.numero_inventario }}</dd>
+      <dt>N.º contable</dt><dd>{{ equipo.numero_contable or "—" }}</dd>
+      <dt>Código contable</dt><dd>{{ equipo.codigo_contable or "—" }}</dd>
+      <dt>Descripción</dt><dd>{{ equipo.descripcion or "—" }}</dd>
+      <dt>Marca y referencia</dt><dd>{{ equipo.marca_referencia or "—" }}</dd>
+      <dt>Service tag</dt><dd>{{ equipo.service_tag or "—" }}</dd>
+      <dt>Serial CPU</dt><dd>{{ equipo.serial_cpu or "—" }}</dd>
+      <dt>Fecha adquisición</dt><dd>{{ equipo.fecha_adquisicion.strftime("%d/%m/%Y") if equipo.fecha_adquisicion else "—" }}</dd>
+      <dt>Mtto 1.er sem. 2026</dt><dd>{% if equipo.mtto_realizado_1s_2026 %}<span class="badge badge--ok">Sí</span>{% else %}<span class="badge badge--no">No</span>{% endif %}</dd>
+      <dt>Mtto 2.do sem. 2026</dt><dd>{% if equipo.mtto_realizado_2s_2026 %}<span class="badge badge--ok">Sí</span>{% else %}<span class="badge badge--no">No</span>{% endif %}</dd>
+      <dt>Observaciones</dt><dd class="detail-grid__wide">{{ equipo.observaciones or "—" }}</dd>
+    </dl>
+    <p class="meta meta--app meta--tight">
+      El mantenimiento 2026 se actualiza en la <a href="{{ url_for('equipos.detalle', equipo_id=equipo.id, next=list_next_hidden) }}">ficha del equipo</a>.
+    </p>
+  </section>
+
+  <section class="panel panel--app panel--accent-app">
+    <h2 class="panel__title panel__title--accent">Asignación (editable)</h2>
+    <form method="post" class="solicitud-form equipo-edit-form" novalidate>
+      {{ form.hidden_tag() }}
+      {% if list_next_hidden %}
+      <input type="hidden" name="next" value="{{ list_next_hidden }}">
+      {% endif %}
+
+      <div class="form-grid form-grid--equipo form-grid--equipo-sm">
+        <div class="field">
+          {{ form.departamento.label(class_="field__label") }}
+          {{ form.departamento(class_="field__input") }}
+          {% for e in form.departamento.errors %}<p class="field__error">{{ e }}</p>{% endfor %}
+        </div>
+        <div class="field">
+          {{ form.area.label(class_="field__label") }}
+          <div class="select-wrap">
+            {{ form.area(class_="field__input field__input--select") }}
+          </div>
+          <p class="field__hint">Debe coincidir con el área de los usuarios que solicitan mantenimiento.</p>
+          {% for e in form.area.errors %}<p class="field__error">{{ e }}</p>{% endfor %}
+        </div>
+        <div class="field">
+          {{ form.cargo.label(class_="field__label") }}
+          {{ form.cargo(class_="field__input") }}
+          {% for e in form.cargo.errors %}<p class="field__error">{{ e }}</p>{% endfor %}
+        </div>
+        <div class="field field--span2">
+          {{ form.usuario.label(class_="field__label") }}
+          {{ form.usuario(class_="field__input") }}
+          {% for e in form.usuario.errors %}<p class="field__error">{{ e }}</p>{% endfor %}
+        </div>
+      </div>
+
+      <div class="form-actions">
+        {{ form.guardar(class_="btn btn--primary") }}
+        <a class="btn btn--secondary" href="{{ back_url }}">Cancelar</a>
+      </div>
+    </form>
+  </section>
+
+  <section class="panel panel--app panel--danger-zone">
+    <h2 class="panel__title panel__title--danger">Eliminar del inventario</h2>
+    <p class="panel__danger-text">
+      Use esta opción si el equipo fue <strong>dado de baja</strong> o ya no debe figurar en el sistema.
+      {% if n_solicitudes > 0 %}
+      Se eliminarán también <strong>{{ n_solicitudes }}</strong> solicitud(es) de mantenimiento asociada(s) y sus evidencias.
+      {% else %}
+      No hay solicitudes de mantenimiento asociadas.
+      {% endif %}
+    </p>
+    <form method="post" class="equipo-delete-form" novalidate>
+      {{ delete_form.hidden_tag() }}
+      {% if list_next_hidden %}
+      <input type="hidden" name="next" value="{{ list_next_hidden }}">
+      {% endif %}
+      <div class="checkbox-row checkbox-row--danger">
+        {{ delete_form.confirmar(class_="checkbox") }}
+        {{ delete_form.confirmar.label(class_="checkbox-label") }}
+      </div>
+      {% for e in delete_form.confirmar.errors %}<p class="field__error">{{ e }}</p>{% endfor %}
+      <div class="form-actions">
+        {{ delete_form.eliminar(class_="btn btn--danger") }}
+      </div>
+    </form>
+  </section>
+</div>
+{% endblock %}

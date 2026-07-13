@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+{% from "macros/nav.html" import back_link %}
+{% block title %}{{ titulo }}{% endblock %}
+{% block body_class %}page--app{% endblock %}
+{% block content %}
+<div class="app-shell anim-fade-in-up">
+  <header class="page-head">
+    {{ back_link(url_for('equipos.usuarios_lista'), "Volver a usuarios") }}
+    <h1 class="page-title page-title--app">{{ titulo }}</h1>
+  </header>
+  <section class="panel panel--app panel--accent-app">
+    <form method="post" class="solicitud-form" novalidate>
+      {{ form.hidden_tag() }}
+      {% if es_nuevo %}
+        <div class="field">
+          {{ form.username.label(class_="field__label") }}
+          {{ form.username(class_="field__input", autocomplete="username") }}
+          {% for e in form.username.errors %}<p class="field__error">{{ e }}</p>{% endfor %}
+        </div>
+      {% else %}
+        <div class="field">
+          <span class="field__label">Usuario</span>
+          <p class="field__static"><strong>{{ user_obj.username }}</strong></p>
+        </div>
+      {% endif %}
+      <div class="field">
+        {{ form.email.label(class_="field__label") }}
+        {{ form.email(class_="field__input", type="email", autocomplete="email") }}
+        {% for e in form.email.errors %}<p class="field__error">{{ e }}</p>{% endfor %}
+      </div>
+      <div class="field">
+        {{ form.area.label(class_="field__label") }}
+        <div class="select-wrap">
+          {{ form.area(class_="field__input field__input--select") }}
+        </div>
+        {% for e in form.area.errors %}<p class="field__error">{{ e }}</p>{% endfor %}
+      </div>
+      {% if not es_nuevo %}
+        <div class="field">
+          {{ form.role.label(class_="field__label") }}
+          <div class="select-wrap">
+            {{ form.role(class_="field__input field__input--select") }}
+          </div>
+        </div>
+        <div class="field field--checkbox">
+          <label class="checkbox-label">
+            {{ form.activo() }}
+            <span>{{ form.activo.label.text }}</span>
+          </label>
+          {% if user_obj and user_obj.id == current_user.id %}
+            <p class="field__hint">No puede desactivar su propia cuenta.</p>
+          {% endif %}
+        </div>
+        <div class="field">
+          {{ form.nueva_password.label(class_="field__label") }}
+          {{ form.nueva_password(class_="field__input", autocomplete="new-password") }}
+          {% for e in form.nueva_password.errors %}<p class="field__error">{{ e }}</p>{% endfor %}
+        </div>
+      {% else %}
+        <div class="field">
+          {{ form.password.label(class_="field__label") }}
+          {{ form.password(class_="field__input", autocomplete="new-password") }}
+          {% for e in form.password.errors %}<p class="field__error">{{ e }}</p>{% endfor %}
+        </div>
+        <div class="field">
+          {{ form.password2.label(class_="field__label") }}
+          {{ form.password2(class_="field__input", autocomplete="new-password") }}
+          {% for e in form.password2.errors %}<p class="field__error">{{ e }}</p>{% endfor %}
+        </div>
+      {% endif %}
+      <div class="form-actions">
+        {% if es_nuevo %}
+          {{ form.crear(class_="btn btn--primary") }}
+        {% else %}
+          {{ form.guardar(class_="btn btn--primary") }}
+        {% endif %}
+        <a class="btn btn--secondary" href="{{ url_for('equipos.usuarios_lista') }}">Cancelar</a>
+      </div>
+    </form>
+  </section>
+</div>
+{% endblock %}

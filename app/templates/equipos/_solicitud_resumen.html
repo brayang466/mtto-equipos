@@ -1,0 +1,80 @@
+<div class="sol-resumen">
+  {% set label, badge_cls = estado_label %}
+  <header class="sol-resumen__head">
+    <h2 class="sol-resumen__title">Solicitud #{{ sol.id }}</h2>
+    <span class="badge badge--{{ badge_cls }}">{{ label }}</span>
+  </header>
+
+  <section class="sol-resumen__block">
+    <h3 class="sol-resumen__subtitle">Equipo</h3>
+    <dl class="detail-grid detail-grid--compact">
+      <dt>Inventario</dt><dd><strong>{{ equipo.numero_inventario if equipo else "—" }}</strong></dd>
+      <dt>N.º contable</dt><dd>{{ equipo.numero_contable if equipo else "—" }}</dd>
+      <dt>Departamento</dt><dd>{{ equipo.departamento if equipo else "—" }}</dd>
+      <dt>Área</dt><dd>{{ equipo.area if equipo else "—" }}</dd>
+      <dt>Usuario asignado</dt><dd>{{ equipo.usuario if equipo else "—" }}</dd>
+      <dt>Descripción</dt><dd>{{ equipo.descripcion if equipo else "—" }}</dd>
+      <dt>Marca / referencia</dt><dd>{{ equipo.marca_referencia if equipo else "—" }}</dd>
+      <dt>Service tag</dt><dd>{{ equipo.service_tag if equipo else "—" }}</dd>
+    </dl>
+  </section>
+
+  <section class="sol-resumen__block">
+    <h3 class="sol-resumen__subtitle">Solicitud</h3>
+    <dl class="detail-grid detail-grid--compact">
+      <dt>Origen</dt><dd>{{ tipo_origen }}</dd>
+      <dt>Registrada por</dt><dd>{{ registrado_por }}</dd>
+      <dt>Fecha solicitud</dt><dd>{{ sol.fecha_solicitud.strftime("%d/%m/%Y") if sol.fecha_solicitud else "—" }}</dd>
+      <dt>Fecha mantenimiento</dt><dd>{{ sol.fecha_mantenimiento.strftime("%d/%m/%Y") if sol.fecha_mantenimiento else "—" }}</dd>
+      <dt>Mensaje / observaciones</dt><dd class="detail-grid__wide">{{ sol.observaciones or "—" }}</dd>
+    </dl>
+  </section>
+
+  {% if sol.respuesta_usuario or sol.comentario_respuesta %}
+  <section class="sol-resumen__block sol-resumen__block--respuesta">
+    <h3 class="sol-resumen__subtitle">Respuesta del usuario</h3>
+    <dl class="detail-grid detail-grid--compact">
+      <dt>Usuario</dt><dd>{{ aprobador }} <span class="cell-muted">({{ aprobador_area }})</span></dd>
+      <dt>Decisión</dt><dd><strong>{{ respuesta_texto }}</strong></dd>
+      <dt>Fecha indicada</dt>
+      <dd>
+        {% if sol.fecha_respuesta_usuario %}
+          {{ sol.fecha_respuesta_usuario.strftime("%d/%m/%Y") }}
+        {% elif sol.fecha_mantenimiento and sol.respuesta_usuario %}
+          {{ sol.fecha_mantenimiento.strftime("%d/%m/%Y") }}
+        {% else %}—{% endif %}
+      </dd>
+      <dt>Comentario</dt><dd class="detail-grid__wide">{{ sol.comentario_respuesta or "—" }}</dd>
+      {% if sol.estado == 'denegada' %}
+      <dt>Vigencia</dt>
+      <dd>
+        {% if denegada_abierta %}
+          Abierta hasta la fecha indicada (TIC puede marcar atendida).
+        {% else %}
+          Cerrada (fecha de vigencia cumplida).
+        {% endif %}
+      </dd>
+      {% endif %}
+    </dl>
+  </section>
+  {% elif sol.estado == 'pendiente_aprobacion' %}
+  <p class="sol-resumen__pending">Esperando respuesta del usuario asignado.</p>
+  {% endif %}
+
+  {% if sol.adjuntos.count() %}
+  <section class="sol-resumen__block">
+    <h3 class="sol-resumen__subtitle">Evidencias ({{ sol.adjuntos.count() }})</h3>
+    <div class="thumb-strip">
+      {% for a in sol.adjuntos %}
+      <a class="thumb-strip__link" href="{{ url_for('equipos.adjunto_ver', adjunto_id=a.id) }}" target="_blank" rel="noopener">
+        <img class="thumb-strip__img" src="{{ url_for('equipos.adjunto_ver', adjunto_id=a.id) }}" alt="" loading="lazy" width="64" height="64">
+      </a>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
+
+  {% if sol.atendido_en %}
+  <p class="sol-resumen__meta">Marcada atendida: {{ sol.atendido_en.strftime("%d/%m/%Y %H:%M") }}</p>
+  {% endif %}
+</div>

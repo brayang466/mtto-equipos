@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% from "macros/nav.html" import back_link %}
+{% block title %}Nueva solicitud — {{ equipo.numero_inventario }}{% endblock %}
+{% block body_class %}page--app{% endblock %}
+{% block content %}
+<div class="app-shell anim-fade-in-up">
+  <header class="page-head">
+    {{ back_link(back_url, "Volver al equipo") }}
+    <p class="breadcrumb breadcrumb--on-light">
+      <a href="{{ url_for('main.inicio') }}">Inicio</a>
+      · <a href="{{ url_for('equipos.lista') }}">Inventario</a>
+      · <span class="breadcrumb__muted">Equipo {{ equipo.numero_inventario }}</span>
+      · <span class="breadcrumb__here">Nueva solicitud</span>
+    </p>
+    <h1 class="page-title page-title--app">Solicitud de mantenimiento</h1>
+    <p class="page-lead page-lead--app">Equipo <span class="inv-pill inv-pill--lg">{{ equipo.numero_inventario }}</span> — indique cuándo podría atenderse y adjunte fotos si aplica.</p>
+  </header>
+
+  <section class="panel panel--app panel--accent-app">
+    <form method="post" class="solicitud-form" enctype="multipart/form-data" novalidate>
+      {{ form.hidden_tag() }}
+      {% if list_next_hidden %}
+      <input type="hidden" name="next" value="{{ list_next_hidden }}">
+      {% endif %}
+
+      <div class="form-grid">
+        <div class="field">
+          {{ form.fecha_solicitud.label(class_="field__label") }}
+          {{ form.fecha_solicitud(class_="field__input", type="date") }}
+          {% for e in form.fecha_solicitud.errors %}<p class="field__error">{{ e }}</p>{% endfor %}
+        </div>
+        <div class="field">
+          {{ form.fecha_mantenimiento.label(class_="field__label") }}
+          {{ form.fecha_mantenimiento(class_="field__input", type="date") }}
+          {% for e in form.fecha_mantenimiento.errors %}<p class="field__error">{{ e }}</p>{% endfor %}
+        </div>
+      </div>
+
+      <div class="field field--block">
+        {{ form.observaciones.label(class_="field__label") }}
+        {{ form.observaciones(class_="field__input field__input--area") }}
+        {% for e in form.observaciones.errors %}<p class="field__error">{{ e }}</p>{% endfor %}
+      </div>
+
+      <div class="field field--block">
+        <label class="field__label" for="evidencias">Imágenes de evidencia (opcional)</label>
+        <input class="field__input field__input--file" type="file" name="evidencias" id="evidencias" accept="image/png,image/jpeg,image/webp,image/gif" multiple>
+        <p class="field__hint">PNG, JPG, WebP o GIF. Varias imágenes a la vez; tamaño máximo por archivo según configuración del servidor.</p>
+      </div>
+
+      <div class="form-actions">
+        {{ form.enviar(class_="btn btn--primary") }}
+      </div>
+    </form>
+  </section>
+</div>
+{% endblock %}

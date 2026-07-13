@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+{% from "macros/nav.html" import back_link %}
+{% block title %}Usuarios{% endblock %}
+{% block body_class %}page--app{% endblock %}
+{% block content %}
+<div class="app-shell anim-fade-in-up">
+  <header class="page-head">
+    {{ back_link(url_for('main.inicio'), "Volver al inicio") }}
+    <p class="breadcrumb breadcrumb--on-light">
+      <a href="{{ url_for('main.inicio') }}">Inicio</a>
+      · <span class="breadcrumb__here">Usuarios</span>
+    </p>
+    <h1 class="page-title page-title--app">Gestión de usuarios</h1>
+    <p class="page-lead page-lead--app">
+      Usuarios registrados en el portal. Puede crear cuentas, editar área, rol y estado.
+      <a class="btn btn--primary btn--sm" href="{{ url_for('equipos.usuario_nuevo') }}" style="margin-left:0.5rem">Nuevo usuario</a>
+    </p>
+  </header>
+
+  <form class="search-bar search-bar--modern inv-search" method="get" action="{{ url_for('equipos.usuarios_lista') }}">
+    <label for="q">Buscar</label>
+    <input type="search" id="q" name="q" value="{{ q }}" placeholder="Usuario, correo o área…" autocomplete="off">
+    <button type="submit" class="btn btn--primary btn--sm">Buscar</button>
+    {% if q %}
+      <a class="btn btn--ghost btn--ghost-app" href="{{ url_for('equipos.usuarios_lista') }}">Limpiar</a>
+    {% endif %}
+  </form>
+
+  {% if pagination.total == 0 %}
+    <p class="empty-state empty-state--app">No hay usuarios que coincidan.</p>
+  {% else %}
+    <div class="table-wrap table-wrap--modern inv-table-wrap">
+      <table class="data-table data-table--modern data-table--inv">
+        <thead>
+          <tr>
+            <th>Usuario</th>
+            <th>Correo</th>
+            <th>Área</th>
+            <th>Rol</th>
+            <th>Estado</th>
+            <th>Última conexión</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in rows %}
+          {% set u = row.user %}
+          <tr class="inv-row inv-row--enter">
+            <td><strong>{{ u.username }}</strong></td>
+            <td>{{ u.email }}</td>
+            <td>{{ u.area }}</td>
+            <td>{% if u.role == 'superadmin' %}Superadmin{% else %}Usuario{% endif %}</td>
+            <td>
+              {% if u.activo %}
+                <span class="inv-pill inv-pill--ok">Activo</span>
+              {% else %}
+                <span class="inv-pill">Inactivo</span>
+              {% endif %}
+            </td>
+            <td>
+              {% if row.online %}
+                <span class="inv-pill inv-pill--glow">Conectado</span>
+              {% else %}
+                {{ row.ultimo_acceso }}
+              {% endif %}
+            </td>
+            <td class="cell-actions">
+              <a class="link link--pill" href="{{ url_for('equipos.usuario_editar', user_id=u.id) }}">Editar</a>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% if pagination.pages > 1 %}
+    <nav class="pagination-bar" aria-label="Páginas">
+      {% if pagination.has_prev %}
+        <a class="btn btn--ghost btn--ghost-app" href="{{ url_for('equipos.usuarios_lista', page=pagination.prev_num, q=q) }}">Anterior</a>
+      {% endif %}
+      <span class="pagination-bar__info">Página {{ pagination.page }} de {{ pagination.pages }}</span>
+      {% if pagination.has_next %}
+        <a class="btn btn--ghost btn--ghost-app" href="{{ url_for('equipos.usuarios_lista', page=pagination.next_num, q=q) }}">Siguiente</a>
+      {% endif %}
+    </nav>
+    {% endif %}
+  {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,138 @@
+{% extends "base.html" %}
+{% from "macros/nav.html" import back_link %}
+{% block title %}Solicitudes de mantenimiento{% endblock %}
+{% block body_class %}page--app{% endblock %}
+{% block content %}
+<div class="app-shell anim-fade-in-up">
+  <header class="page-head">
+    {{ back_link(back_url, "Volver al inventario") }}
+    <p class="breadcrumb breadcrumb--on-light">
+      <a href="{{ url_for('main.inicio') }}">Inicio</a>
+      · <a href="{{ url_for('equipos.lista') }}">Inventario</a>
+      · <span class="breadcrumb__here">Solicitudes</span>
+    </p>
+    <h1 class="page-title page-title--app">Solicitudes de mantenimiento</h1>
+    <p class="page-lead page-lead--app">
+      Registros enviados por los usuarios o solicitados por TIC. Use <strong>Ver detalle</strong> para la respuesta del usuario.
+      {% if equipo_filtro %}<span class="filter-chip">Filtrado por equipo #{{ equipo_filtro }}</span>{% endif %}
+    </p>
+  </header>
+
+  {% if equipo_filtro %}
+  <p class="meta meta--app">
+    <a class="link link--pill" href="{{ url_for('equipos.solicitudes_lista') }}">Quitar filtro de equipo</a>
+  </p>
+  {% endif %}
+
+  <section class="export-panel export-panel--app" aria-label="Exportar solicitudes">
+    <h2 class="export-panel__title">Descargar resumen</h2>
+    <p class="export-panel__hint">Organizado por fecha de solicitud (emisión). Deje vacío para exportar todo.</p>
+    <form class="export-panel__form" method="get" action="{{ url_for('equipos.solicitudes_exportar') }}">
+      <label class="export-panel__field">
+        <span>Desde</span>
+        <input type="date" name="desde" value="{{ export_desde }}" class="field__input">
+      </label>
+      <label class="export-panel__field">
+        <span>Hasta</span>
+        <input type="date" name="hasta" value="{{ export_hasta }}" class="field__input">
+      </label>
+      <button type="submit" name="formato" value="csv" class="btn btn--secondary btn--sm">CSV resumen</button>
+      <button type="submit" name="formato" value="zip" class="btn btn--ghost btn--ghost-app btn--sm">ZIP evidencias</button>
+    </form>
+  </section>
+
+  {% if pagination.total == 0 %}
+    <p class="empty-state empty-state--app">No hay solicitudes registradas.</p>
+  {% else %}
+    <p class="meta meta--app">{{ pagination.total }} solicitud(es) · página {{ pagination.page }} de {{ pagination.pages or 1 }}</p>
+
+    <div class="table-wrap table-wrap--modern">
+      <table class="data-table data-table--modern">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Inventario</th>
+            <th>Fecha solicitud</th>
+            <th>Fecha mantenimiento</th>
+            <th>Respuesta usuario</th>
+            <th>Estado</th>
+            <th>Fotos</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for s in pagination.items %}
+          {% set label, badge_cls = etiqueta_estado_solicitud(s) %}
+          <tr>
+            <td><span class="inv-pill">{{ s.id }}</span></td>
+            <td>
+              {% if sol_return %}
+              <a class="link link--pill" href="{{ url_for('equipos.detalle', equipo_id=s.equipo_id, next=sol_return) }}">{{ s.equipo.numero_inventario }}</a>
+              {% else %}
+              <a class="link link--pill" href="{{ url_for('equipos.detalle', equipo_id=s.equipo_id) }}">{{ s.equipo.numero_inventario }}</a>
+              {% endif %}
+            </td>
+            <td>{{ s.fecha_solicitud.strftime("%d/%m/%Y") }}</td>
+            <td>{% if s.fecha_mantenimiento %}{{ s.fecha_mantenimiento.strftime("%d/%m/%Y") }}{% else %}—{% endif %}</td>
+            <td class="cell-muted">
+              {% if s.respuesta_usuario %}
+                <strong>{{ respuesta_usuario_legible(s) }}</strong>
+                {% if s.comentario_respuesta %}
+                  <span class="cell-clip"> · {{ s.comentario_respuesta[:60] }}{% if s.comentario_respuesta|length > 60 %}…{% endif %}</span>
+                {% endif %}
+              {% elif s.estado == 'pendiente_aprobacion' %}
+                Pendiente
+              {% else %}—{% endif %}
+            </td>
+            <td>
+              <span class="badge badge--{{ badge_cls }}">{{ label }}</span>
+            </td>
+            <td>{{ s.adjuntos.count() }}</td>
+            <td class="cell-actions cell-actions--stack">
+              <button
+                type="button"
+                class="btn btn--ghost btn--ghost-app btn--sm btn-ver-sol-detalle"
+                data-resumen-url="{{ url_for('equipos.solicitud_resumen', solicitud_id=s.id) }}"
+              >Ver detalle</button>
+              {% if puede_marcar_atendida(s) %}
+              <form method="post" action="{{ url_for('equipos.solicitud_marcar_atendida', solicitud_id=s.id) }}" class="form-marcar-atendida">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                <button type="submit" class="btn btn--secondary btn--sm">Marcar atendida</button>
+              </form>
+              {% endif %}
+              <a class="btn btn--ghost btn--ghost-app btn--sm" href="{{ url_for('equipos.solicitud_editar', solicitud_id=s.id) }}">Editar</a>
+              <a class="btn btn--ghost btn--ghost-app btn--sm" href="{{ url_for('equipos.solicitud_eliminar', solicitud_id=s.id) }}">Eliminar</a>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    {% if pagination.pages > 1 %}
+    <nav class="pagination pagination--app" aria-label="Paginación solicitudes">
+      {% if pagination.has_prev %}
+        <a href="{{ url_for('equipos.solicitudes_lista', page=pagination.prev_num, equipo_id=equipo_filtro or none) }}">← Anterior</a>
+      {% endif %}
+      {% if pagination.has_next %}
+        <a href="{{ url_for('equipos.solicitudes_lista', page=pagination.next_num, equipo_id=equipo_filtro or none) }}">Siguiente →</a>
+      {% endif %}
+    </nav>
+    {% endif %}
+  {% endif %}
+</div>
+
+<dialog class="info-modal sol-detalle-modal" id="dialogo-sol-detalle" aria-labelledby="sol-detalle-titulo">
+  <div class="info-modal__panel sol-detalle-modal__panel">
+    <button type="button" class="sol-detalle-modal__close" id="sol-detalle-cerrar" aria-label="Cerrar">×</button>
+    <h2 id="sol-detalle-titulo" class="visually-hidden">Detalle de solicitud</h2>
+    <div id="sol-detalle-contenido" class="sol-detalle-modal__body">
+      <p class="cell-muted">Cargando…</p>
+    </div>
+  </div>
+</dialog>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/solicitud-detalle.js') }}" defer></script>
+{% endblock %}

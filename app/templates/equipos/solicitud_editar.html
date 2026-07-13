@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% from "macros/nav.html" import back_link %}
+{% block title %}Editar solicitud #{{ sol.id }}{% endblock %}
+{% block body_class %}page--app{% endblock %}
+{% block content %}
+<div class="app-shell anim-fade-in-up">
+  <header class="page-head">
+    {{ back_link(back_url, "Volver a solicitudes") }}
+    <h1 class="page-title page-title--app">Editar solicitud #{{ sol.id }}</h1>
+    <p class="page-lead page-lead--app">
+      Equipo inventario <strong>{{ sol.equipo.numero_inventario }}</strong> — solo superadmin.
+    </p>
+  </header>
+
+  <form class="form-card form-card--app" method="post" novalidate>
+    {{ form.hidden_tag() }}
+    <div class="form-grid form-grid--2">
+      <div class="field">
+        {{ form.fecha_solicitud.label(class="field__label") }}
+        {{ form.fecha_solicitud(class="field__input") }}
+        {% for e in form.fecha_solicitud.errors %}<p class="field__error">{{ e }}</p>{% endfor %}
+      </div>
+      <div class="field">
+        {{ form.fecha_mantenimiento.label(class="field__label") }}
+        {{ form.fecha_mantenimiento(class="field__input") }}
+        {% for e in form.fecha_mantenimiento.errors %}<p class="field__error">{{ e }}</p>{% endfor %}
+      </div>
+      <div class="field">
+        {{ form.fecha_respuesta_usuario.label(class="field__label") }}
+        {{ form.fecha_respuesta_usuario(class="field__input") }}
+      </div>
+      <div class="field">
+        {{ form.estado.label(class="field__label") }}
+        {{ form.estado(class="field__input") }}
+        {% for e in form.estado.errors %}<p class="field__error">{{ e }}</p>{% endfor %}
+      </div>
+      <div class="field">
+        {{ form.respuesta_usuario.label(class="field__label") }}
+        {{ form.respuesta_usuario(class="field__input") }}
+      </div>
+    </div>
+    <div class="field">
+      {{ form.observaciones.label(class="field__label") }}
+      {{ form.observaciones(class="field__input field__input--area") }}
+    </div>
+    <div class="field">
+      {{ form.comentario_respuesta.label(class="field__label") }}
+      {{ form.comentario_respuesta(class="field__input field__input--area") }}
+    </div>
+    <div class="form-actions">
+      {{ form.guardar(class="btn btn--primary") }}
+      <a class="btn btn--ghost btn--ghost-app" href="{{ back_url }}">Cancelar</a>
+    </div>
+  </form>
+</div>
+{% endblock %}
