@@ -28,6 +28,10 @@
   var audioCtx = null;
   var areaOpenState = {};
   var chatModo = "area";
+  var pollTick = 0;
+  var presenceSignature = "";
+  var POLL_MS = 2200;
+  var PRESENCE_EVERY = 2; // ~4.4 s con poll 2.2 s
   var whisperPeer = null;
 
   var STORAGE_MAIN = "mtto-chat-collapsed";
@@ -373,10 +377,30 @@
     return html;
   }
 
+  function presenceSig(usuarios, onlineCount) {
+    var parts = [String(onlineCount != null ? onlineCount : 0)];
+    for (var i = 0; i < (usuarios || []).length; i++) {
+      var u = usuarios[i];
+      parts.push(
+        String(u.id) +
+          ":" +
+          (u.online ? "1" : "0") +
+          ":" +
+          (u.ultimo_acceso || "")
+      );
+    }
+    return parts.join("|");
+  }
+
   function renderPresence(usuarios, onlineCount) {
     if (!listOnline) return;
+    if (usuarios == null) return;
 
     var users = usuarios || [];
+    var sig = presenceSig(users, onlineCount);
+    if (sig === presenceSignature) return;
+    presenceSignature = sig;
+
     if (countEl) countEl.textContent = String(onlineCount != null ? onlineCount : 0);
 
     if (!users.length) {
@@ -428,10 +452,11 @@
     if (countEl) countEl.textContent = "0";
   }
 
-  function buildEstadoUrl() {
+  function buildEstadoUrl(wantPresence) {
     var since = historyLoaded ? lastId : 0;
     var url = estadoUrl + (estadoUrl.indexOf("?") >= 0 ? "&" : "?") + "since_id=" + since;
     url += "&modo=" + encodeURIComponent(chatModo);
+    url += "&presence=" + (wantPresence ? "1" : "0");
     if (chatModo === "susurro" && whisperPeer) {
       url += "&peer_id=" + encodeURIComponent(String(whisperPeer.id));
     }
@@ -441,14 +466,22 @@
   function poll() {
     if (polling || !estadoUrl) return;
     if (chatModo === "susurro" && !whisperPeer) return;
+    if (typeof document !== "undefined" && document.hidden) return;
     polling = true;
-    fetch(buildEstadoUrl(), { credentials: "same-origin", headers: { Accept: "application/json" } })
+    pollTick += 1;
+    var wantPresence = !historyLoaded || pollTick % PRESENCE_EVERY === 1;
+    fetch(buildEstadoUrl(wantPresence), {
+      credentials: "same-origin",
+      headers: { Accept: "application/json" },
+    })
       .then(function (r) {
         if (!r.ok) throw new Error("HTTP " + r.status);
         return r.json();
       })
       .then(function (data) {
-        renderPresence(data.usuarios || [], data.online_count);
+        if (Object.prototype.hasOwnProperty.call(data, "usuarios")) {
+          renderPresence(data.usuarios || [], data.online_count);
+        }
         var msgs = data.messages || [];
         var wasBottom =
           msgsEl && msgsEl.scrollHeight - msgsEl.scrollTop - msgsEl.clientHeight < 48;
@@ -587,7 +620,7 @@
   bindCollapseUI();
   updateChannelUI();
   poll();
-  setInterval(poll, 1000);
+  setInterval(poll, POLL_MS);
 
   function notifyOffline() {
     if (!offlineUrl || !csrf) return;

@@ -87,7 +87,7 @@
             <td>
               <span class="badge badge--{{ badge_cls }}">{{ label }}</span>
             </td>
-            <td>{{ s.adjuntos.count() }}</td>
+            <td>{{ adjuntos_count.get(s.id, 0) }}</td>
             <td class="cell-actions cell-actions--stack">
               <button
                 type="button"

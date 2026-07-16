@@ -39,8 +39,12 @@
       {% if not current_user.is_authenticated %}
       {% elif current_user.is_superadmin() %}
       <a class="btn btn--primary btn--lg btn--pulse" href="{{ url_for('equipos.lista') }}">Ir al inventario</a>
+      <a class="btn btn--glass btn--lg" href="{{ url_for('equipos.usabilidad') }}">Usabilidad</a>
       {% else %}
       <a class="btn btn--primary btn--lg btn--pulse" href="{{ url_for('main.registrar_solicitud') }}">Registrar solicitud de mantenimiento</a>
+      {% if sus_pendiente %}
+      <a class="btn btn--glass btn--lg" href="{{ url_for('main.usabilidad_encuesta') }}">Opinar sobre el portal (1 min)</a>
+      {% endif %}
       {% endif %}
       <button type="button" class="btn btn--glass btn--lg" id="btn-info-programa" aria-haspopup="dialog" aria-controls="dialogo-programa">
         Qué puede hacer aquí

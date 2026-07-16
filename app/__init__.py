@@ -1,4 +1,5 @@
 from pathlib import Path
+import secrets
 
 from flask import Flask
 
@@ -9,6 +10,8 @@ from app.extensions import csrf, db, login_manager
 def create_app(config_class: type = Config) -> Flask:
     app = Flask(__name__, instance_relative_config=True)
     app.config.from_object(config_class)
+    # Identifica cada arranque del servidor (confirmación de sesión al volver).
+    app.config["APP_BOOT_ID"] = secrets.token_hex(8)
 
     upload_dir = Path(app.instance_path) / app.config["UPLOAD_RELATIVE"]
     upload_dir.mkdir(parents=True, exist_ok=True)
@@ -20,8 +23,13 @@ def create_app(config_class: type = Config) -> Flask:
 
     @app.before_request
     def _track_presence() -> None:
+        from flask import request
         from flask_login import current_user
 
+        # No tocar DB en estáticos.
+        path = request.path or ""
+        if path.startswith("/static/"):
+            return
         if current_user.is_authenticated:
             try:
                 from app.presence_service import touch_presence
@@ -32,12 +40,15 @@ def create_app(config_class: type = Config) -> Flask:
 
     @app.context_processor
     def inject_globals() -> dict:
+        from flask import request
         from flask_login import current_user
 
         idle_min = int(app.config.get("SESSION_IDLE_MINUTES") or 10)
-        online_users = []
         pending_approvals = 0
-        if current_user.is_authenticated:
+        # Evita COUNT extra en cada poll JSON del chat / APIs.
+        path = request.path or ""
+        skip_pending = path.startswith("/api/") or path.startswith("/static/")
+        if current_user.is_authenticated and not skip_pending:
             try:
                 if not current_user.is_superadmin():
                     from app.presence_service import count_pending_approvals
@@ -48,6 +59,7 @@ def create_app(config_class: type = Config) -> Flask:
         return {
             "app_url": app.config.get("APP_URL", ""),
             "app_name": "Mtto equipos",
+            "app_boot_id": app.config.get("APP_BOOT_ID", ""),
             "session_idle_ms": max(1, idle_min) * 60 * 1000,
             "pending_approvals_count": pending_approvals,
         }

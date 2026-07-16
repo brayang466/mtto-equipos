@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="es" {% if current_user.is_authenticated %}data-indicators-url="{{ url_for('main.api_indicators') }}"{% endif %}>
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -24,7 +24,7 @@
         <svg class="site-brand-icon__svg" viewBox="0 0 24 24" width="26" height="26" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
           <defs>
             <linearGradient id="navPcGrad" x1="2" y1="2" x2="22" y2="22" gradientUnits="userSpaceOnUse">
-              <stop stop-color="#38bdf8"/><stop offset="1" stop-color="#818cf8"/>
+              <stop stop-color="#2dd4bf"/><stop offset="1" stop-color="#38bdf8"/>
             </linearGradient>
           </defs>
           <rect x="3" y="4" width="18" height="12" rx="2" stroke="url(#navPcGrad)" stroke-width="1.75"/>
@@ -38,12 +38,14 @@
           {% if current_user.is_superadmin() %}
             <a class="site-nav__link site-nav__link--cta" href="{{ url_for('equipos.lista') }}">Inventario</a>
             <a class="site-nav__link {% if request.endpoint == 'equipos.solicitudes_lista' %}site-nav__link--active{% endif %}" href="{{ url_for('equipos.solicitudes_lista') }}">Solicitudes</a>
+            <a class="site-nav__link {% if request.endpoint == 'equipos.usabilidad' %}site-nav__link--active{% endif %}" href="{{ url_for('equipos.usabilidad') }}">Usabilidad</a>
             <a class="site-nav__link {% if request.endpoint and request.endpoint.startswith('equipos.usuario') %}site-nav__link--active{% endif %}" href="{{ url_for('equipos.usuarios_lista') }}">Usuarios</a>
           {% else %}
             <a class="site-nav__link site-nav__link--cta" href="{{ url_for('main.registrar_solicitud') }}">Registrar solicitud</a>
-            <a class="site-nav__link {% if request.endpoint == 'main.mis_aprobaciones' %}site-nav__link--active{% endif %}" href="{{ url_for('main.mis_aprobaciones') }}">
-              Aprobaciones{% if pending_approvals_count %} ({{ pending_approvals_count }}){% endif %}
+            <a class="site-nav__link {% if request.endpoint == 'main.mis_aprobaciones' %}site-nav__link--active{% endif %}" id="nav-aprobaciones" href="{{ url_for('main.mis_aprobaciones') }}">
+              Aprobaciones<span id="nav-aprobaciones-count"{% if not pending_approvals_count %} hidden{% endif %}>{% if pending_approvals_count %} ({{ pending_approvals_count }}){% endif %}</span>
             </a>
+            <a class="site-nav__link {% if request.endpoint == 'main.usabilidad_encuesta' %}site-nav__link--active{% endif %}" href="{{ url_for('main.usabilidad_encuesta') }}">Encuesta</a>
           {% endif %}
           <span class="site-nav__user" title="{{ current_user.email }}">{{ current_user.username }}</span>
           <a class="site-nav__link site-nav__link--ghost" href="{{ url_for('auth.logout') }}">Salir</a>
@@ -175,29 +177,32 @@
     id="dialogo-sesion-inactiva"
     aria-labelledby="session-idle-titulo"
     data-idle-ms="{{ session_idle_ms }}"
+    data-boot-id="{{ app_boot_id }}"
     data-logout-url="{{ url_for('auth.logout') }}"
+    data-ping-url="{{ url_for('main.session_ping') }}"
   >
     <div class="info-modal__panel session-idle-modal__panel">
       <div class="session-idle-modal__icon" aria-hidden="true">
-        <svg viewBox="0 0 48 48" width="40" height="40" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <svg viewBox="0 0 48 48" width="36" height="36" fill="none" xmlns="http://www.w3.org/2000/svg">
           <circle cx="24" cy="24" r="18" stroke="url(#idleGrad)" stroke-width="2"/>
           <path d="M24 14v10l6 4" stroke="url(#idleGrad)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
           <defs>
             <linearGradient id="idleGrad" x1="12" y1="12" x2="36" y2="36" gradientUnits="userSpaceOnUse">
-              <stop stop-color="#38bdf8"/><stop offset="1" stop-color="#818cf8"/>
+              <stop stop-color="#2dd4bf"/><stop offset="1" stop-color="#38bdf8"/>
             </linearGradient>
           </defs>
         </svg>
       </div>
-      <h2 id="session-idle-titulo" class="session-idle-modal__titulo">¿Tu sesión sigue activa?</h2>
-      <p class="session-idle-modal__texto">¿Deseas continuar?</p>
+      <h2 id="session-idle-titulo" class="session-idle-modal__titulo">¿Su sesión sigue activa?</h2>
+      <p id="session-idle-texto" class="session-idle-modal__texto">No detectamos actividad por un tiempo. ¿Desea continuar?</p>
       <div class="session-idle-modal__actions">
-        <button type="button" class="session-idle-modal__btn session-idle-modal__btn--si" data-session-idle="si">Sí</button>
-        <button type="button" class="session-idle-modal__btn session-idle-modal__btn--no" data-session-idle="no">No</button>
+        <button type="button" class="session-idle-modal__btn session-idle-modal__btn--si" data-session-idle="si">Continuar</button>
+        <button type="button" class="session-idle-modal__btn session-idle-modal__btn--no" data-session-idle="no">Cerrar sesión</button>
       </div>
     </div>
   </dialog>
   <script src="{{ url_for('static', filename='js/session-idle.js') }}" defer></script>
+  <script src="{{ url_for('static', filename='js/live-indicators.js') }}" defer></script>
   <script src="{{ url_for('static', filename='js/team-chat.js') }}" defer></script>
   {% endif %}
   {% block scripts %}{% endblock %}

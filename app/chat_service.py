@@ -2,13 +2,14 @@
 from __future__ import annotations
 
 from sqlalchemy import and_, or_
+from sqlalchemy.orm import joinedload
 
 from app.constants import CHAT_TIPO_AREA, CHAT_TIPO_SUSURRO
 from app.datetime_utils import format_chat_datetime
 from app.extensions import db
 from app.models import ChatMensaje, User
 
-CHAT_HISTORY_LIMIT = 80
+CHAT_HISTORY_LIMIT = 50
 CHAT_POLL_MESSAGES_LIMIT = 40
 
 
@@ -62,11 +63,15 @@ def crear_mensaje_susurro(user_id: int, destinatario_id: int, texto: str) -> Cha
     return msg
 
 
+def _with_users(q):
+    return q.options(joinedload(ChatMensaje.autor), joinedload(ChatMensaje.destinatario))
+
+
 def mensajes_desde(user_id: int, area: str, modo: str, peer_id: int | None, msg_id: int) -> list[ChatMensaje]:
     if modo == CHAT_TIPO_SUSURRO and not peer_id:
         return []
     return (
-        _base_query(user_id, area, modo, peer_id)
+        _with_users(_base_query(user_id, area, modo, peer_id))
         .filter(ChatMensaje.id > msg_id)
         .order_by(ChatMensaje.id.asc())
         .limit(CHAT_POLL_MESSAGES_LIMIT)
@@ -78,7 +83,7 @@ def historial_reciente(user_id: int, area: str, modo: str, peer_id: int | None) 
     if modo == CHAT_TIPO_SUSURRO and not peer_id:
         return []
     return (
-        _base_query(user_id, area, modo, peer_id)
+        _with_users(_base_query(user_id, area, modo, peer_id))
         .order_by(ChatMensaje.id.desc())
         .limit(CHAT_HISTORY_LIMIT)
         .all()[::-1]

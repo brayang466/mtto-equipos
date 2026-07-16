@@ -30,6 +30,11 @@ class User(UserMixin, db.Model):
         foreign_keys="SolicitudMantenimiento.usuario_aprobador_id",
     )
     presencia = db.relationship("UserPresence", back_populates="usuario", uselist=False)
+    encuesta_usabilidad = db.relationship(
+        "UsabilidadEncuesta",
+        back_populates="usuario",
+        uselist=False,
+    )
 
     def is_superadmin(self) -> bool:
         return self.role == ROLE_SUPERADMIN and self.activo
@@ -194,3 +199,38 @@ class ChatMensaje(db.Model):
 
     def __repr__(self) -> str:
         return f"<ChatMensaje {self.id}>"
+
+
+class UsabilidadEncuesta(db.Model):
+    """Respuesta SUS (System Usability Scale) por usuario."""
+
+    __tablename__ = "usabilidad_encuestas"
+
+    id = db.Column(db.BigInteger, primary_key=True, autoincrement=True)
+    user_id = db.Column(
+        db.BigInteger,
+        db.ForeignKey("usuarios.id", ondelete="CASCADE"),
+        nullable=False,
+        unique=True,
+        index=True,
+    )
+    q1 = db.Column(db.SmallInteger, nullable=False)
+    q2 = db.Column(db.SmallInteger, nullable=False)
+    q3 = db.Column(db.SmallInteger, nullable=False)
+    q4 = db.Column(db.SmallInteger, nullable=False)
+    q5 = db.Column(db.SmallInteger, nullable=False)
+    q6 = db.Column(db.SmallInteger, nullable=False)
+    q7 = db.Column(db.SmallInteger, nullable=False)
+    q8 = db.Column(db.SmallInteger, nullable=False)
+    q9 = db.Column(db.SmallInteger, nullable=False)
+    q10 = db.Column(db.SmallInteger, nullable=False)
+    score = db.Column(db.Numeric(5, 2), nullable=False)
+    creado_en = db.Column(db.DateTime, nullable=False, server_default=func.now())
+    actualizado_en = db.Column(
+        db.DateTime, nullable=False, server_default=func.now(), onupdate=func.now()
+    )
+
+    usuario = db.relationship("User", back_populates="encuesta_usabilidad")
+
+    def __repr__(self) -> str:
+        return f"<UsabilidadEncuesta user={self.user_id} score={self.score}>"

@@ -1,0 +1,217 @@
+{% extends "base.html" %}
+{% from "macros/nav.html" import back_link %}
+{% block title %}Usabilidad{% endblock %}
+{% block body_class %}page--app page--usa{% endblock %}
+{% block content %}
+{% set score = sus.promedio if sus.promedio is not none else none %}
+{% set score_pct = ((score / 100) * 100)|round(0)|int if score is not none else 0 %}
+{% set estado_labels = {
+  'pendiente': 'Pendiente',
+  'pendiente_aprobacion': 'Espera usuario',
+  'aprobada': 'Aprobada',
+  'denegada': 'Denegada',
+  'atendida': 'Atendida'
+} %}
+{% set estado_max = (ops.por_estado.values()|list|max) if ops.por_estado and (ops.por_estado.values()|list|max) else 1 %}
+{% set chat_max = (ops.chat_por_area[0][1] if ops.chat_por_area else 1) %}
+<div
+  class="app-shell usa-shell anim-fade-in-up"
+  id="usa-live"
+  data-api-url="{{ usabilidad_api_url }}"
+  data-desde="{{ filtro_desde }}"
+  data-hasta="{{ filtro_hasta }}"
+>
+  <header class="usa-hero">
+    <div class="usa-hero__text">
+      {{ back_link(back_url, "Volver al inicio") }}
+      <p class="usa-hero__eyebrow">Seguimiento del portal</p>
+      <h1 class="usa-hero__title">Usabilidad del portal</h1>
+      <p class="usa-hero__lead">
+        Aquí se ve cómo se está usando el sistema: qué dicen los usuarios en la encuesta,
+        cuánto tardan las solicitudes y cómo se mueve el chat por área.
+      </p>
+      <p class="usa-live-stamp" id="usa-live-stamp" aria-live="polite">Actualización en vivo</p>
+    </div>
+    <form class="usa-filter" method="get" action="{{ url_for('equipos.usabilidad') }}">
+      <p class="usa-filter__label">Periodo</p>
+      <div class="usa-filter__row">
+        <label class="usa-filter__field">
+          <span>Desde</span>
+          <input type="date" name="desde" value="{{ filtro_desde }}">
+        </label>
+        <label class="usa-filter__field">
+          <span>Hasta</span>
+          <input type="date" name="hasta" value="{{ filtro_hasta }}">
+        </label>
+        <button type="submit" class="btn btn--primary btn--sm">Aplicar</button>
+        <a class="btn btn--ghost btn--ghost-app btn--sm" href="{{ url_for('equipos.usabilidad') }}">Limpiar</a>
+      </div>
+      <p class="usa-filter__hint">El filtro aplica a solicitudes y chat. Los conectados y la encuesta son siempre del momento actual. Los indicadores se refrescan solos.</p>
+    </form>
+  </header>
+
+  <section class="usa-score usa-score--{{ sus.semaforo }}" id="usa-score" aria-labelledby="usa-sus-title">
+    <div class="usa-score__ring-wrap" aria-hidden="true">
+      <svg class="usa-score__ring" viewBox="0 0 120 120" width="140" height="140">
+        <circle class="usa-score__track" cx="60" cy="60" r="52" fill="none" stroke-width="10"/>
+        <circle
+          class="usa-score__progress"
+          cx="60" cy="60" r="52" fill="none" stroke-width="10"
+          stroke-dasharray="{{ (score_pct * 326.73 / 100)|round(1) }} 326.73"
+          transform="rotate(-90 60 60)"
+        />
+      </svg>
+      <div class="usa-score__center">
+        {% if score is not none %}
+        <span class="usa-score__num">{{ score }}</span>
+        <span class="usa-score__den">/100</span>
+        {% else %}
+        <span class="usa-score__num usa-score__num--empty">—</span>
+        {% endif %}
+      </div>
+    </div>
+    <div class="usa-score__body">
+      <p class="usa-score__kicker" id="usa-sus-title">Encuesta a usuarios</p>
+      <h2 class="usa-score__heading">Puntuación promedio</h2>
+      <p class="usa-score__interp">{{ sus.interpretacion }}</p>
+      <div class="usa-score__chips">
+        <span class="usa-chip"><strong>{{ sus.n }}</strong> persona(s) respondieron</span>
+        <span class="usa-chip">
+          Respondieron
+          <strong>{% if sus.pct_respuesta is not none %}{{ sus.pct_respuesta }}%{% else %}—{% endif %}</strong>
+          de {{ sus.usuarios_elegibles }} usuarios
+        </span>
+      </div>
+      <div class="usa-bands">
+        <div class="usa-band usa-band--ok">
+          <span class="usa-band__dot"></span>
+          <span>Muy bien (80 o más)</span>
+          <strong>{{ sus.excelente }}</strong>
+        </div>
+        <div class="usa-band usa-band--warn">
+          <span class="usa-band__dot"></span>
+          <span>Aceptable (68 a 79)</span>
+          <strong>{{ sus.aceptable }}</strong>
+        </div>
+        <div class="usa-band usa-band--no">
+          <span class="usa-band__dot"></span>
+          <span>Hay que mejorar (menos de 68)</span>
+          <strong>{{ sus.mejorar }}</strong>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="usa-block">
+    <div class="usa-block__head">
+      <h2 class="usa-block__title">Indicadores del día a día</h2>
+      <p class="usa-block__sub">Resumen rápido de uso, tiempos y pendientes. El color indica si va bien, regular o hay que poner atención.</p>
+    </div>
+    <div class="usa-grid" id="usa-kpi-grid">
+      {% for k in ops.kpis %}
+      <article class="usa-kpi usa-kpi--{{ k.semaforo }}" data-kpi-id="{{ k.id }}" style="--usa-i: {{ loop.index0 }}">
+        <div class="usa-kpi__top">
+          <h3 class="usa-kpi__title">{{ k.titulo }}</h3>
+          <span class="usa-kpi__pulse" title="{{ k.semaforo }}"></span>
+        </div>
+        <p class="usa-kpi__value">
+          {% if k.valor is not none %}
+            {{ k.valor }}{% if k.unidad %}<span class="usa-kpi__unit">{{ k.unidad }}</span>{% endif %}
+          {% else %}—
+          {% endif %}
+        </p>
+        <p class="usa-kpi__detalle">{{ k.detalle }}</p>
+        <p class="usa-kpi__hint">{{ k.interpretacion }}</p>
+      </article>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="usa-insights">
+    <article class="usa-panel">
+      <div class="usa-panel__head">
+        <h2 class="usa-panel__title">Cómo van las solicitudes</h2>
+        <span class="usa-panel__badge" id="usa-estado-badge">{{ ops.total_solicitudes }} en el periodo</span>
+      </div>
+      <ul class="usa-bars" id="usa-estado-bars">
+        {% for est, n in ops.por_estado.items() %}
+        <li class="usa-bar">
+          <div class="usa-bar__meta">
+            <span>{{ estado_labels.get(est, est) }}</span>
+            <strong>{{ n }}</strong>
+          </div>
+          <div class="usa-bar__track">
+            <span class="usa-bar__fill usa-bar__fill--{{ loop.index % 5 }}" style="width: {{ ((n / estado_max) * 100)|round(1) }}%"></span>
+          </div>
+        </li>
+        {% else %}
+        <li class="usa-empty">Sin datos en el periodo</li>
+        {% endfor %}
+      </ul>
+    </article>
+
+    <article class="usa-panel">
+      <div class="usa-panel__head">
+        <h2 class="usa-panel__title">Chat por área</h2>
+        <span class="usa-panel__badge">mensajes del canal</span>
+      </div>
+      <ul class="usa-bars" id="usa-chat-bars">
+        {% for area, n in ops.chat_por_area %}
+        <li class="usa-bar">
+          <div class="usa-bar__meta">
+            <span>{{ area }}</span>
+            <strong>{{ n }}</strong>
+          </div>
+          <div class="usa-bar__track">
+            <span class="usa-bar__fill usa-bar__fill--chat" style="width: {{ ((n / chat_max) * 100)|round(1) }}%"></span>
+          </div>
+        </li>
+        {% else %}
+        <li class="usa-empty">Sin mensajes de área en el periodo</li>
+        {% endfor %}
+      </ul>
+    </article>
+  </section>
+
+  <section class="usa-panel usa-panel--wide">
+    <div class="usa-panel__head">
+      <h2 class="usa-panel__title">Actividad por área</h2>
+      <span class="usa-panel__badge">cuántos usuarios y cuántas solicitudes</span>
+    </div>
+    <div class="table-wrap table-wrap--modern usa-table-wrap">
+      <table class="data-table data-table--modern usa-table">
+        <thead>
+          <tr>
+            <th>Área</th>
+            <th>Usuarios</th>
+            <th>Solicitudes</th>
+            <th>Promedio por usuario</th>
+          </tr>
+        </thead>
+        <tbody id="usa-cobertura-body">
+          {% for row in ops.cobertura %}
+          {% set raw_i = ((row.solicitudes_por_usuario * 40)|round(0)|int) %}
+          <tr>
+            <td><span class="usa-area-pill">{{ row.area }}</span></td>
+            <td>{{ row.usuarios }}</td>
+            <td>{{ row.solicitudes }}</td>
+            <td>
+              <div class="usa-intensity" title="{{ row.solicitudes_por_usuario }} sol./usuario">
+                <span class="usa-intensity__fill" style="width: {{ raw_i if raw_i < 100 else 100 }}%"></span>
+                <span class="usa-intensity__val">{{ row.solicitudes_por_usuario }}</span>
+              </div>
+            </td>
+          </tr>
+          {% else %}
+          <tr><td colspan="4" class="cell-muted">Sin datos</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/usabilidad-live.js') }}" defer></script>
+{% endblock %}

@@ -57,7 +57,7 @@
                 <span class="inv-pill">Inactivo</span>
               {% endif %}
             </td>
-            <td>
+            <td data-user-presence="{{ u.id }}">
               {% if row.online %}
                 <span class="inv-pill inv-pill--glow">Conectado</span>
               {% else %}

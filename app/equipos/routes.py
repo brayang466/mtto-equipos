@@ -213,8 +213,44 @@ def solicitud_tic(equipo_id: int):
     )
 
 
+@bp.route("/usabilidad")
+def usabilidad():
+    from app.usabilidad_service import panel_usabilidad
+
+    data = panel_usabilidad(request.args.get("desde"), request.args.get("hasta"))
+    return render_template(
+        "equipos/usabilidad.html",
+        sus=data["sus"],
+        ops=data["ops"],
+        filtro_desde=data["filtro_desde"],
+        filtro_hasta=data["filtro_hasta"],
+        back_url=url_for("main.inicio"),
+        usabilidad_api_url=url_for("equipos.usabilidad_api"),
+    )
+
+
+@bp.route("/api/usabilidad")
+def usabilidad_api():
+    """Panel de usabilidad en JSON para refresco en tiempo real."""
+    from flask import jsonify
+
+    if not current_user.is_authenticated or not current_user.is_superadmin():
+        abort(403)
+    from app.usabilidad_service import panel_usabilidad
+
+    try:
+        data = panel_usabilidad(request.args.get("desde"), request.args.get("hasta"))
+        return jsonify({"ok": True, "sus": data["sus"], "ops": data["ops"]})
+    except Exception:
+        db.session.rollback()
+        current_app.logger.exception("usabilidad_api")
+        return jsonify({"ok": False, "error": "No se pudieron cargar los indicadores."}), 500
+
+
 @bp.route("/solicitudes")
 def solicitudes_lista():
+    from sqlalchemy import func
+
     page = request.args.get("page", 1, type=int) or 1
     if page < 1:
         page = 1
@@ -225,11 +261,24 @@ def solicitudes_lista():
     if equipo_id:
         q = q.filter(SolicitudMantenimiento.equipo_id == equipo_id)
     pagination = q.paginate(page=page, per_page=per_page, error_out=False)
+
+    adjuntos_count: dict[int, int] = {}
+    ids = [s.id for s in pagination.items]
+    if ids:
+        rows = (
+            db.session.query(SolicitudAdjunto.solicitud_id, func.count(SolicitudAdjunto.id))
+            .filter(SolicitudAdjunto.solicitud_id.in_(ids))
+            .group_by(SolicitudAdjunto.solicitud_id)
+            .all()
+        )
+        adjuntos_count = {sid: int(n) for sid, n in rows}
+
     back_url = _safe_equipos_list_return(request.args.get("next")) or url_for("equipos.lista")
     sol_return = _safe_solicitudes_list_return(request.full_path)
     return render_template(
         "equipos/solicitudes_lista.html",
         pagination=pagination,
+        adjuntos_count=adjuntos_count,
         equipo_filtro=equipo_id,
         back_url=back_url,
         sol_return=sol_return,
